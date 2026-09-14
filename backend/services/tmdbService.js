@@ -59,18 +59,22 @@ export const formatTmdbMovie = (tmdbItem) => {
 
   const streamingMirrors = isTv
     ? [
-        { name: "⚡ Server 1 (AutoEmbed TV)", url: `https://player.autoembed.cc/embed/tv/${id}/1/1`, type: "embed" },
-        { name: "🎬 Server 2 (VidSrc Cloud)", url: `https://vidsrc.to/embed/tv/${id}/1/1`, type: "embed" },
-        { name: "🚀 Server 3 (SuperEmbed Fast)", url: `https://multiembed.mov/?video_id=${id}&tmdb=1&s=1&e=1`, type: "embed" },
+        { name: "⚡ Server 1 (VidSrc Pro)", url: `https://vidsrc.to/embed/tv/${id}/1/1`, type: "embed" },
+        { name: "🎬 Server 2 (VidSrc XYZ)", url: `https://vidsrc.xyz/embed/tv?tmdb=${id}&season=1&episode=1`, type: "embed" },
+        { name: "🚀 Server 3 (MultiEmbed Fast)", url: `https://multiembed.mov/?video_id=${id}&tmdb=1&s=1&e=1`, type: "embed" },
         { name: "🌐 Server 4 (EmbedSU VIP)", url: `https://embed.su/embed/tv/${id}/1/1`, type: "embed" },
-        { name: "📼 Server 5 (Direct Mirror)", url: "https://archive.org/download/BigBuckBunny_124/Content/big_buck_bunny_720p_surround.mp4", type: "video" },
+        { name: "⚡ Server 5 (VidLink 4K)", url: `https://vidlink.pro/tv/${id}/1/1`, type: "embed" },
+        { name: "🎥 Server 6 (2Embed VIP)", url: `https://www.2embed.cc/embedtv/${id}&s=1&e=1`, type: "embed" },
+        { name: "📼 Server 7 (Direct Mirror)", url: "https://archive.org/download/BigBuckBunny_124/Content/big_buck_bunny_720p_surround.mp4", type: "video" },
       ]
     : [
-        { name: "⚡ Server 1 (AutoEmbed 4K)", url: `https://player.autoembed.cc/embed/movie/${id}`, type: "embed" },
-        { name: "🎬 Server 2 (VidSrc Cloud)", url: `https://vidsrc.to/embed/movie/${id}`, type: "embed" },
-        { name: "🚀 Server 3 (SuperEmbed Fast)", url: `https://multiembed.mov/?video_id=${id}&tmdb=1`, type: "embed" },
+        { name: "⚡ Server 1 (VidSrc Pro 4K)", url: `https://vidsrc.to/embed/movie/${id}`, type: "embed" },
+        { name: "🎬 Server 2 (VidSrc XYZ)", url: `https://vidsrc.xyz/embed/movie?tmdb=${id}`, type: "embed" },
+        { name: "🚀 Server 3 (MultiEmbed Fast)", url: `https://multiembed.mov/?video_id=${id}&tmdb=1`, type: "embed" },
         { name: "🌐 Server 4 (EmbedSU VIP)", url: `https://embed.su/embed/movie/${id}`, type: "embed" },
-        { name: "📼 Server 5 (Direct Mirror)", url: "https://archive.org/download/BigBuckBunny_124/Content/big_buck_bunny_720p_surround.mp4", type: "video" },
+        { name: "⚡ Server 5 (VidLink 4K)", url: `https://vidlink.pro/movie/${id}`, type: "embed" },
+        { name: "🎥 Server 6 (2Embed VIP)", url: `https://www.2embed.cc/embed/${id}`, type: "embed" },
+        { name: "📼 Server 7 (Direct Mirror)", url: "https://archive.org/download/BigBuckBunny_124/Content/big_buck_bunny_720p_surround.mp4", type: "video" },
       ];
 
   return {
