@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Play, Film, Bookmark, Check, Info, Star, ChevronLeft, ChevronRight } from "lucide-react";
 import { useWatchlist } from "../../context/WatchlistContext";
@@ -53,7 +53,7 @@ const HeroBanner = ({ featuredMovies = [] }) => {
         style={{
           position: "absolute",
           inset: 0,
-          backgroundImage: `url(${current.backdrop || current.poster})`,
+          backgroundImage: `url(${current.bannerUrl || current.backdrop || current.posterUrl || current.poster})`,
           backgroundSize: "cover",
           backgroundPosition: "center top",
           filter: "brightness(0.85)",

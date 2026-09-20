@@ -1,418 +1,631 @@
-﻿import slugify from "./slugify.js";
+import slugify from './slugify.js';
 
 export const initialGenres = [
   {
-    _id: "67d4f0010000000000000001",
-    name: "Action",
-    slug: "action",
-    description: "High-octane adrenaline, explosive stunts, intense tactical combat and heroic journeys.",
-    image: "https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?auto=format&fit=crop&w=1200&q=80",
-    featured: true,
+    "_id": "67d4f0010000000000000001",
+    "name": "Action",
+    "slug": "action",
+    "description": "High-octane adrenaline, explosive stunts, intense tactical combat and heroic journeys.",
+    "image": "https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?auto=format&fit=crop&w=1200&q=80",
+    "featured": true
   },
   {
-    _id: "67d4f0010000000000000002",
-    name: "Sci-Fi",
-    slug: "sci-fi",
-    description: "Futuristic technology, deep space exploration, AI revolutions and mind-bending realities.",
-    image: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1200&q=80",
-    featured: true,
+    "_id": "67d4f0010000000000000002",
+    "name": "Sci-Fi",
+    "slug": "sci-fi",
+    "description": "Futuristic technology, deep space exploration, AI revolutions and mind-bending realities.",
+    "image": "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1200&q=80",
+    "featured": true
   },
   {
-    _id: "67d4f0010000000000000003",
-    name: "Drama",
-    slug: "drama",
-    description: "Compelling human narratives, emotional depths, moral dilemmas and poignant performances.",
-    image: "https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&w=1200&q=80",
-    featured: true,
+    "_id": "67d4f0010000000000000003",
+    "name": "Drama",
+    "slug": "drama",
+    "description": "Compelling human narratives, emotional depths, moral dilemmas and poignant performances.",
+    "image": "https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&w=1200&q=80",
+    "featured": true
   },
   {
-    _id: "67d4f0010000000000000004",
-    name: "Thriller",
-    slug: "thriller",
-    description: "Gripping suspense, psychological twists, mysterious conspiracies and breathless pacing.",
-    image: "https://images.unsplash.com/photo-1509281373149-e957c6296406?auto=format&fit=crop&w=1200&q=80",
-    featured: true,
+    "_id": "67d4f0010000000000000004",
+    "name": "Thriller",
+    "slug": "thriller",
+    "description": "Gripping suspense, psychological twists, mysterious conspiracies and breathless pacing.",
+    "image": "https://images.unsplash.com/photo-1509281373149-e957c6296406?auto=format&fit=crop&w=1200&q=80",
+    "featured": true
   },
   {
-    _id: "67d4f0010000000000000005",
-    name: "Comedy",
-    slug: "comedy",
-    description: "Witty banter, hilarious misadventures, situational comedy and feel-good laughs.",
-    image: "https://images.unsplash.com/photo-1514306191717-452ec28c7814?auto=format&fit=crop&w=1200&q=80",
-    featured: false,
+    "_id": "67d4f0010000000000000005",
+    "name": "Comedy",
+    "slug": "comedy",
+    "description": "Witty banter, hilarious misadventures, situational comedy and feel-good laughs.",
+    "image": "https://images.unsplash.com/photo-1514306191717-452ec28c7814?auto=format&fit=crop&w=1200&q=80",
+    "featured": true
   },
   {
-    _id: "67d4f0010000000000000006",
-    name: "Horror",
-    slug: "horror",
-    description: "Chilling supernatural phenomena, psychological dread and terrifying mysteries.",
-    image: "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=1200&q=80",
-    featured: false,
-  },
-  {
-    _id: "67d4f0010000000000000007",
-    name: "Romance",
-    slug: "romance",
-    description: "Passionate love stories, unexpected connections, emotional resonance and heartfelt moments.",
-    image: "https://images.unsplash.com/photo-1518199266791-5375a83190b7?auto=format&fit=crop&w=1200&q=80",
-    featured: false,
-  },
-  {
-    _id: "67d4f0010000000000000008",
-    name: "Animation",
-    slug: "animation",
-    description: "Breathtaking visual artistry, fantastical worlds and unforgettable storytelling for all ages.",
-    image: "https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=1200&q=80",
-    featured: true,
-  },
+    "_id": "67d4f0010000000000000006",
+    "name": "Horror",
+    "slug": "horror",
+    "description": "Chilling supernatural phenomena, psychological dread and terrifying mysteries.",
+    "image": "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=1200&q=80",
+    "featured": true
+  }
 ];
 
 export const initialMovies = [
   {
-    _id: "67d4f0020000000000000001",
-    title: "The Last Horizon",
-    slug: "the-last-horizon",
-    description: "In the year 2184, an interstellar deep-reconnaissance team uncovers an ancient beacon on the rim of the solar system, unraveling the origin of humanity and a catastrophic cosmic anomaly.",
-    poster: "https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=800&q=80",
-    backdrop: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1920&q=80",
-    trailerUrl: "https://archive.org/download/Tears-of-Steel/tears_of_steel_720p.mp4",
-    videoUrl: "https://archive.org/download/Tears-of-Steel/tears_of_steel_720p.mp4",
-    genre: "Sci-Fi",
-    genres: ["Sci-Fi", "Action", "Adventure"],
-    language: "English",
-    releaseYear: 2025,
-    duration: 138,
-    rating: 9.1,
-    director: "Marcus Vance",
-    cast: ["Elena Rostova", "Julian Thorne", "Sarah Jenkins", "Devon Cole"],
-    ageRating: "13+",
-    quality: "4K Ultra HD",
-    isFeatured: true,
-    isTrending: true,
-    isPublished: true,
-    views: 48200,
-    tags: ["Space", "Future", "AI", "Epic"],
+    "_id": "67d4f0020000000000000001",
+    "title": "Pushpa 2: The Rule",
+    "slug": "pushpa-2-the-rule",
+    "description": "Pushpa Raj rises to rule the red sandalwood empire while facing deadly vengeance from SP Bhanwar Singh Shekhawat in an explosive confrontation.",
+    "posterUrl": "https://image.tmdb.org/t/p/w500/1XddMr7I22eXh2bF9VqQx2Q7G2N.jpg",
+    "bannerUrl": "https://image.tmdb.org/t/p/original/b33nnKl1GSFbao8l3urDDZe4KH4.jpg",
+    "trailerUrl": "https://archive.org/download/Tears-of-Steel/tears_of_steel_720p.mp4",
+    "videoUrl": "https://vidsrc.to/embed/movie/791373",
+    "streamingMirrors": [
+      {
+        "name": "⚡ Server 1 (VidSrc Pro 4K)",
+        "url": "https://vidsrc.to/embed/movie/791373",
+        "type": "embed"
+      },
+      {
+        "name": "🎬 Server 2 (VidSrc XYZ)",
+        "url": "https://vidsrc.xyz/embed/movie?tmdb=791373",
+        "type": "embed"
+      },
+      {
+        "name": "🚀 Server 3 (MultiEmbed Fast)",
+        "url": "https://multiembed.mov/?video_id=791373&tmdb=1",
+        "type": "embed"
+      },
+      {
+        "name": "🌐 Server 4 (EmbedSU VIP)",
+        "url": "https://embed.su/embed/movie/791373",
+        "type": "embed"
+      },
+      {
+        "name": "📼 Server 5 (Direct Mirror)",
+        "url": "https://archive.org/download/BigBuckBunny_124/Content/big_buck_bunny_720p_surround.mp4",
+        "type": "video"
+      }
+    ],
+    "releaseYear": 2024,
+    "duration": "201 min",
+    "rating": 9.4,
+    "ageRating": "16+",
+    "quality": "4K Ultra HD",
+    "genre": "Action",
+    "genres": [
+      "Action",
+      "Crime",
+      "Drama"
+    ],
+    "director": "Sukumar",
+    "cast": [
+      "Allu Arjun",
+      "Rashmika Mandanna",
+      "Fahadh Faasil",
+      "Jagapathi Babu"
+    ],
+    "isFeatured": true,
+    "isTrending": true,
+    "isPublished": true,
+    "views": 148520,
+    "tags": [
+      "pushpa",
+      "pushpa 2",
+      "allu arjun",
+      "action",
+      "hindi",
+      "south",
+      "4k"
+    ]
   },
   {
-    _id: "67d4f0020000000000000002",
-    title: "Midnight Echo",
-    slug: "midnight-echo",
-    description: "A troubled audio forensic detective in Neo-Chicago begins receiving encrypted sound frequencies from an unknown caller claiming to be trapped in tomorrow.",
-    poster: "https://images.unsplash.com/photo-1509281373149-e957c6296406?auto=format&fit=crop&w=800&q=80",
-    backdrop: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1920&q=80",
-    trailerUrl: "https://archive.org/download/Sintel/sintel-2048-surround.mp4",
-    videoUrl: "https://archive.org/download/Sintel/sintel-2048-surround.mp4",
-    genre: "Thriller",
-    genres: ["Thriller", "Mystery", "Sci-Fi"],
-    language: "English",
-    releaseYear: 2024,
-    duration: 114,
-    rating: 8.7,
-    director: "Sophia Laurent",
-    cast: ["David Sterling", "Maya Lin", "Arthur Pendelton"],
-    ageRating: "16+",
-    quality: "4K Ultra HD",
-    isFeatured: true,
-    isTrending: true,
-    isPublished: true,
-    views: 36400,
-    tags: ["Mystery", "Cyberpunk", "Audio", "Suspense"],
+    "_id": "67d4f0020000000000000002",
+    "title": "Stree 2: Sarkate Ka Aatank",
+    "slug": "stree-2",
+    "description": "The town of Chanderi faces a terrifying new headless evil 'Sarkata'. Vicky, Jana, Bittu and Rudra unite with the mysterious Stree to defeat him.",
+    "posterUrl": "https://image.tmdb.org/t/p/w500/1XddMr7I22eXh2bF9VqQx2Q7G2N.jpg",
+    "bannerUrl": "https://image.tmdb.org/t/p/original/stree2_backdrop.jpg",
+    "trailerUrl": "https://archive.org/download/Tears-of-Steel/tears_of_steel_720p.mp4",
+    "videoUrl": "https://vidsrc.to/embed/movie/1022789",
+    "streamingMirrors": [
+      {
+        "name": "⚡ Server 1 (VidSrc Pro 4K)",
+        "url": "https://vidsrc.to/embed/movie/1022789",
+        "type": "embed"
+      },
+      {
+        "name": "🎬 Server 2 (VidSrc XYZ)",
+        "url": "https://vidsrc.xyz/embed/movie?tmdb=1022789",
+        "type": "embed"
+      },
+      {
+        "name": "🚀 Server 3 (MultiEmbed Fast)",
+        "url": "https://multiembed.mov/?video_id=1022789&tmdb=1",
+        "type": "embed"
+      },
+      {
+        "name": "🌐 Server 4 (EmbedSU VIP)",
+        "url": "https://embed.su/embed/movie/1022789",
+        "type": "embed"
+      },
+      {
+        "name": "📼 Server 5 (Direct Mirror)",
+        "url": "https://archive.org/download/BigBuckBunny_124/Content/big_buck_bunny_720p_surround.mp4",
+        "type": "video"
+      }
+    ],
+    "releaseYear": 2024,
+    "duration": "147 min",
+    "rating": 8.9,
+    "ageRating": "13+",
+    "quality": "4K Ultra HD",
+    "genre": "Comedy",
+    "genres": [
+      "Comedy",
+      "Horror",
+      "Mystery"
+    ],
+    "director": "Amar Kaushik",
+    "cast": [
+      "Rajkummar Rao",
+      "Shraddha Kapoor",
+      "Pankaj Tripathi",
+      "Abhishek Banerjee"
+    ],
+    "isFeatured": true,
+    "isTrending": true,
+    "isPublished": true,
+    "views": 234100,
+    "tags": [
+      "stree",
+      "stree 2",
+      "shraddha kapoor",
+      "rajkummar rao",
+      "horror comedy",
+      "hindi"
+    ]
   },
   {
-    _id: "67d4f0020000000000000003",
-    title: "Silent Roads",
-    slug: "silent-roads",
-    description: "A solitary long-haul courier across a decommissioned transcontinental highway finds herself escorting an enigmatic passenger carrying the only cure to a global cognitive blackout.",
-    poster: "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=800&q=80",
-    backdrop: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1920&q=80",
-    trailerUrl: "https://archive.org/download/ElephantsDream/ed_1024_5.1.mp4",
-    videoUrl: "https://archive.org/download/ElephantsDream/ed_1024_5.1.mp4",
-    genre: "Drama",
-    genres: ["Drama", "Action", "Adventure"],
-    language: "English",
-    releaseYear: 2024,
-    duration: 122,
-    rating: 8.4,
-    director: "Aiden Cross",
-    cast: ["Rachel Briggs", "Mateo Silva", "Claire Dupont"],
-    ageRating: "13+",
-    quality: "1080p Full HD",
-    isFeatured: false,
-    isTrending: true,
-    isPublished: true,
-    views: 29100,
-    tags: ["Highway", "Survival", "Post-Apocalyptic"],
+    "_id": "67d4f0020000000000000003",
+    "title": "Kalki 2898 AD",
+    "slug": "kalki-2898-ad",
+    "description": "In the dystopian city of Kasi in 2898 AD, an immortal warrior Ashwatthama protects the unborn divine child against the supreme dictator Supreme Yaskin.",
+    "posterUrl": "https://image.tmdb.org/t/p/w500/872585.jpg",
+    "bannerUrl": "https://image.tmdb.org/t/p/original/kalki_backdrop.jpg",
+    "trailerUrl": "https://archive.org/download/Tears-of-Steel/tears_of_steel_720p.mp4",
+    "videoUrl": "https://vidsrc.to/embed/movie/799583",
+    "streamingMirrors": [
+      {
+        "name": "⚡ Server 1 (VidSrc Pro 4K)",
+        "url": "https://vidsrc.to/embed/movie/799583",
+        "type": "embed"
+      },
+      {
+        "name": "🎬 Server 2 (VidSrc XYZ)",
+        "url": "https://vidsrc.xyz/embed/movie?tmdb=799583",
+        "type": "embed"
+      },
+      {
+        "name": "🚀 Server 3 (MultiEmbed Fast)",
+        "url": "https://multiembed.mov/?video_id=799583&tmdb=1",
+        "type": "embed"
+      },
+      {
+        "name": "🌐 Server 4 (EmbedSU VIP)",
+        "url": "https://embed.su/embed/movie/799583",
+        "type": "embed"
+      },
+      {
+        "name": "📼 Server 5 (Direct Mirror)",
+        "url": "https://archive.org/download/BigBuckBunny_124/Content/big_buck_bunny_720p_surround.mp4",
+        "type": "video"
+      }
+    ],
+    "releaseYear": 2024,
+    "duration": "181 min",
+    "rating": 9.1,
+    "ageRating": "13+",
+    "quality": "4K Ultra HD",
+    "genre": "Sci-Fi",
+    "genres": [
+      "Sci-Fi",
+      "Action",
+      "Fantasy"
+    ],
+    "director": "Nag Ashwin",
+    "cast": [
+      "Prabhas",
+      "Amitabh Bachchan",
+      "Deepika Padukone",
+      "Kamal Haasan"
+    ],
+    "isFeatured": true,
+    "isTrending": true,
+    "isPublished": true,
+    "views": 198400,
+    "tags": [
+      "kalki",
+      "kalki 2898 ad",
+      "prabhas",
+      "amitabh bachchan",
+      "sci fi",
+      "hindi",
+      "telugu"
+    ]
   },
   {
-    _id: "67d4f0020000000000000004",
-    title: "Project Aurora",
-    slug: "project-aurora",
-    description: "When an atmospheric research base in the Arctic Circle detects an unnatural magnetic pulse beneath the glacial shelf, a specialized tactical team descends into an uncharted subterranean ecosystem.",
-    poster: "https://images.unsplash.com/photo-1483728642387-6c3bdd6c93e5?auto=format&fit=crop&w=800&q=80",
-    backdrop: "https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?auto=format&fit=crop&w=1920&q=80",
-    trailerUrl: "https://archive.org/download/Tears-of-Steel/tears_of_steel_720p.mp4",
-    videoUrl: "https://archive.org/download/Tears-of-Steel/tears_of_steel_720p.mp4",
-    genre: "Action",
-    genres: ["Action", "Sci-Fi", "Thriller"],
-    language: "English",
-    releaseYear: 2025,
-    duration: 130,
-    rating: 8.9,
-    director: "Victor Krum",
-    cast: ["Liam Walker", "Chloe Zhang", "Gabriel O'Connor"],
-    ageRating: "16+",
-    quality: "4K Ultra HD",
-    isFeatured: true,
-    isTrending: true,
-    isPublished: true,
-    views: 52100,
-    tags: ["Arctic", "Tactical", "Expedition"],
+    "_id": "67d4f0020000000000000004",
+    "title": "Deadpool & Wolverine",
+    "slug": "deadpool-and-wolverine",
+    "description": "Wade Wilson teams up with a reluctant Wolverine on a high-stakes mission through the multiverse to save his universe from annihilation.",
+    "posterUrl": "https://image.tmdb.org/t/p/w500/8cdWjvZQUExUUTzyp4t6EDMubfO.jpg",
+    "bannerUrl": "https://image.tmdb.org/t/p/original/yDHYTfa2wfgpZKMufQIcxAN5Umh.jpg",
+    "trailerUrl": "https://archive.org/download/Tears-of-Steel/tears_of_steel_720p.mp4",
+    "videoUrl": "https://vidsrc.to/embed/movie/533535",
+    "streamingMirrors": [
+      {
+        "name": "⚡ Server 1 (VidSrc Pro 4K)",
+        "url": "https://vidsrc.to/embed/movie/533535",
+        "type": "embed"
+      },
+      {
+        "name": "🎬 Server 2 (VidSrc XYZ)",
+        "url": "https://vidsrc.xyz/embed/movie?tmdb=533535",
+        "type": "embed"
+      },
+      {
+        "name": "🚀 Server 3 (MultiEmbed Fast)",
+        "url": "https://multiembed.mov/?video_id=533535&tmdb=1",
+        "type": "embed"
+      },
+      {
+        "name": "🌐 Server 4 (EmbedSU VIP)",
+        "url": "https://embed.su/embed/movie/533535",
+        "type": "embed"
+      },
+      {
+        "name": "📼 Server 5 (Direct Mirror)",
+        "url": "https://archive.org/download/BigBuckBunny_124/Content/big_buck_bunny_720p_surround.mp4",
+        "type": "video"
+      }
+    ],
+    "releaseYear": 2024,
+    "duration": "128 min",
+    "rating": 8.8,
+    "ageRating": "18+",
+    "quality": "4K Ultra HD",
+    "genre": "Action",
+    "genres": [
+      "Action",
+      "Comedy",
+      "Sci-Fi"
+    ],
+    "director": "Shawn Levy",
+    "cast": [
+      "Ryan Reynolds",
+      "Hugh Jackman",
+      "Emma Corrin"
+    ],
+    "isFeatured": true,
+    "isTrending": true,
+    "isPublished": true,
+    "views": 312000,
+    "tags": [
+      "deadpool",
+      "wolverine",
+      "marvel",
+      "action",
+      "hollywood",
+      "dual audio"
+    ]
   },
   {
-    _id: "67d4f0020000000000000005",
-    title: "Beyond the Stars",
-    slug: "beyond-the-stars",
-    description: "A young astrophysics prodigy designs an experimental harmonic drive capable of bridging dimensional thresholds, opening a doorway to celestial civilizations.",
-    poster: "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?auto=format&fit=crop&w=800&q=80",
-    backdrop: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1920&q=80",
-    trailerUrl: "https://archive.org/download/Sintel/sintel-2048-surround.mp4",
-    videoUrl: "https://archive.org/download/Sintel/sintel-2048-surround.mp4",
-    genre: "Sci-Fi",
-    genres: ["Sci-Fi", "Adventure", "Family"],
-    language: "English",
-    releaseYear: 2023,
-    duration: 108,
-    rating: 8.2,
-    director: "Hannah Miller",
-    cast: ["Lucas Bennett", "Astrid Lind", "Professor Charles"],
-    ageRating: "PG",
-    quality: "1080p Full HD",
-    isFeatured: false,
-    isTrending: false,
-    isPublished: true,
-    views: 18900,
-    tags: ["Space", "Young Prodigy", "Discovery"],
+    "_id": "67d4f0020000000000000005",
+    "title": "Jawan",
+    "slug": "jawan",
+    "description": "A high-octane emotional thriller about a man set to rectify the wrongs in society with a team of courageous women.",
+    "posterUrl": "https://image.tmdb.org/t/p/w500/jawan_poster.jpg",
+    "bannerUrl": "https://image.tmdb.org/t/p/original/jawan_backdrop.jpg",
+    "trailerUrl": "https://archive.org/download/Tears-of-Steel/tears_of_steel_720p.mp4",
+    "videoUrl": "https://vidsrc.to/embed/movie/872585",
+    "streamingMirrors": [
+      {
+        "name": "⚡ Server 1 (VidSrc Pro 4K)",
+        "url": "https://vidsrc.to/embed/movie/872585",
+        "type": "embed"
+      },
+      {
+        "name": "🎬 Server 2 (VidSrc XYZ)",
+        "url": "https://vidsrc.xyz/embed/movie?tmdb=872585",
+        "type": "embed"
+      },
+      {
+        "name": "🚀 Server 3 (MultiEmbed Fast)",
+        "url": "https://multiembed.mov/?video_id=872585&tmdb=1",
+        "type": "embed"
+      },
+      {
+        "name": "🌐 Server 4 (EmbedSU VIP)",
+        "url": "https://embed.su/embed/movie/872585",
+        "type": "embed"
+      },
+      {
+        "name": "📼 Server 5 (Direct Mirror)",
+        "url": "https://archive.org/download/BigBuckBunny_124/Content/big_buck_bunny_720p_surround.mp4",
+        "type": "video"
+      }
+    ],
+    "releaseYear": 2023,
+    "duration": "169 min",
+    "rating": 8.7,
+    "ageRating": "16+",
+    "quality": "4K Ultra HD",
+    "genre": "Action",
+    "genres": [
+      "Action",
+      "Thriller"
+    ],
+    "director": "Atlee",
+    "cast": [
+      "Shah Rukh Khan",
+      "Nayanthara",
+      "Vijay Sethupathi",
+      "Deepika Padukone"
+    ],
+    "isFeatured": false,
+    "isTrending": true,
+    "isPublished": true,
+    "views": 450000,
+    "tags": [
+      "jawan",
+      "srk",
+      "shah rukh khan",
+      "atlee",
+      "action",
+      "hindi"
+    ]
   },
   {
-    _id: "67d4f0020000000000000006",
-    title: "Hidden Truth",
-    slug: "hidden-truth",
-    description: "An investigative journalist uncovers a multi-billion dollar pharmaceutical syndicate orchestrating synthetic epidemics across coastal metropolises.",
-    poster: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=800&q=80",
-    backdrop: "https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&w=1920&q=80",
-    trailerUrl: "https://archive.org/download/BigBuckBunny_124/Content/big_buck_bunny_720p_surround.mp4",
-    videoUrl: "https://archive.org/download/BigBuckBunny_124/Content/big_buck_bunny_720p_surround.mp4",
-    genre: "Drama",
-    genres: ["Drama", "Thriller", "Crime"],
-    language: "English",
-    releaseYear: 2024,
-    duration: 126,
-    rating: 8.6,
-    director: "Nora Chen",
-    cast: ["Julianne Moore", "Edward Norton", "Ken Watanabe"],
-    ageRating: "16+",
-    quality: "4K Ultra HD",
-    isFeatured: false,
-    isTrending: true,
-    isPublished: true,
-    views: 31200,
-    tags: ["Conspiracy", "Journalism", "Crime"],
+    "_id": "67d4f0020000000000000006",
+    "title": "Animal",
+    "slug": "animal",
+    "description": "The turbulent relationship between a son and his emotionally unavailable father spirals into extreme bloodshed and revenge.",
+    "posterUrl": "https://image.tmdb.org/t/p/w500/animal_poster.jpg",
+    "bannerUrl": "https://image.tmdb.org/t/p/original/animal_backdrop.jpg",
+    "trailerUrl": "https://archive.org/download/Tears-of-Steel/tears_of_steel_720p.mp4",
+    "videoUrl": "https://vidsrc.to/embed/movie/781732",
+    "streamingMirrors": [
+      {
+        "name": "⚡ Server 1 (VidSrc Pro 4K)",
+        "url": "https://vidsrc.to/embed/movie/781732",
+        "type": "embed"
+      },
+      {
+        "name": "🎬 Server 2 (VidSrc XYZ)",
+        "url": "https://vidsrc.xyz/embed/movie?tmdb=781732",
+        "type": "embed"
+      },
+      {
+        "name": "🚀 Server 3 (MultiEmbed Fast)",
+        "url": "https://multiembed.mov/?video_id=781732&tmdb=1",
+        "type": "embed"
+      },
+      {
+        "name": "🌐 Server 4 (EmbedSU VIP)",
+        "url": "https://embed.su/embed/movie/781732",
+        "type": "embed"
+      },
+      {
+        "name": "📼 Server 5 (Direct Mirror)",
+        "url": "https://archive.org/download/BigBuckBunny_124/Content/big_buck_bunny_720p_surround.mp4",
+        "type": "video"
+      }
+    ],
+    "releaseYear": 2023,
+    "duration": "201 min",
+    "rating": 8.6,
+    "ageRating": "18+",
+    "quality": "4K Ultra HD",
+    "genre": "Action",
+    "genres": [
+      "Action",
+      "Crime",
+      "Drama"
+    ],
+    "director": "Sandeep Reddy Vanga",
+    "cast": [
+      "Ranbir Kapoor",
+      "Rashmika Mandanna",
+      "Anil Kapoor",
+      "Bobby Deol"
+    ],
+    "isFeatured": false,
+    "isTrending": true,
+    "isPublished": true,
+    "views": 390000,
+    "tags": [
+      "animal",
+      "ranbir kapoor",
+      "bobby deol",
+      "action",
+      "hindi"
+    ]
   },
   {
-    _id: "67d4f0020000000000000007",
-    title: "Chronicles of Lumina",
-    slug: "chronicles-of-lumina",
-    description: "In a realm where light is harvested as magical energy, an orphaned clockmaker and a rogue sentinel embark on a quest to restore the Celestial Beacon before eternal darkness claims their world.",
-    poster: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=800&q=80",
-    backdrop: "https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=1920&q=80",
-    trailerUrl: "https://archive.org/download/BigBuckBunny_124/Content/big_buck_bunny_720p_surround.mp4",
-    videoUrl: "https://archive.org/download/BigBuckBunny_124/Content/big_buck_bunny_720p_surround.mp4",
-    genre: "Animation",
-    genres: ["Animation", "Adventure", "Fantasy"],
-    language: "English",
-    releaseYear: 2025,
-    duration: 98,
-    rating: 9.3,
-    director: "Studio Lumina",
-    cast: ["Voice: Emma Watson", "Voice: Tom Hiddleston", "Voice: Ian McKellen"],
-    ageRating: "PG",
-    quality: "4K Ultra HD",
-    isFeatured: true,
-    isTrending: true,
-    isPublished: true,
-    views: 64500,
-    tags: ["Fantasy", "Animation", "Magic"],
+    "_id": "67d4f0020000000000000007",
+    "title": "Mirzapur (All Seasons)",
+    "slug": "mirzapur",
+    "description": "The iron-fisted Akhandanand Tripathi rules Mirzapur. A bloody battle of ambition, revenge, and power unfolds in the heart of Purvanchal.",
+    "posterUrl": "https://image.tmdb.org/t/p/w500/mirzapur_poster.jpg",
+    "bannerUrl": "https://image.tmdb.org/t/p/original/mirzapur_backdrop.jpg",
+    "trailerUrl": "https://archive.org/download/Tears-of-Steel/tears_of_steel_720p.mp4",
+    "videoUrl": "https://vidsrc.to/embed/tv/83867/1/1",
+    "streamingMirrors": [
+      {
+        "name": "⚡ Server 1 (VidSrc TV)",
+        "url": "https://vidsrc.to/embed/tv/83867/1/1",
+        "type": "embed"
+      },
+      {
+        "name": "🎬 Server 2 (VidSrc XYZ)",
+        "url": "https://vidsrc.xyz/embed/tv?tmdb=83867&season=1&episode=1",
+        "type": "embed"
+      },
+      {
+        "name": "🚀 Server 3 (MultiEmbed Fast)",
+        "url": "https://multiembed.mov/?video_id=83867&tmdb=1&s=1&e=1",
+        "type": "embed"
+      },
+      {
+        "name": "🌐 Server 4 (EmbedSU VIP)",
+        "url": "https://embed.su/embed/tv/83867/1/1",
+        "type": "embed"
+      },
+      {
+        "name": "📼 Server 5 (Direct Mirror)",
+        "url": "https://archive.org/download/BigBuckBunny_124/Content/big_buck_bunny_720p_surround.mp4",
+        "type": "video"
+      }
+    ],
+    "releaseYear": 2024,
+    "duration": "3 Seasons (Full HD)",
+    "rating": 9.3,
+    "ageRating": "18+",
+    "quality": "4K Ultra HD",
+    "genre": "Drama",
+    "genres": [
+      "Crime",
+      "Drama",
+      "Action"
+    ],
+    "director": "Gurmmeet Singh",
+    "cast": [
+      "Pankaj Tripathi",
+      "Ali Fazal",
+      "Shweta Tripathi",
+      "Rasika Dugal"
+    ],
+    "isFeatured": false,
+    "isTrending": true,
+    "isPublished": true,
+    "views": 520000,
+    "tags": [
+      "mirzapur",
+      "kaleen bhaiya",
+      "guddu",
+      "pankaj tripathi",
+      "web series",
+      "hindi"
+    ]
   },
   {
-    _id: "67d4f0020000000000000008",
-    title: "Velocity Shift",
-    slug: "velocity-shift",
-    description: "A disgraced Formula E engineer and an underground street racer build a kinetic hypercar to take down an illegal betting cartel ruling the neon-lit streets of Tokyo.",
-    poster: "https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=800&q=80",
-    backdrop: "https://images.unsplash.com/photo-1511919884226-fd3cad34687c?auto=format&fit=crop&w=1920&q=80",
-    trailerUrl: "https://archive.org/download/ElephantsDream/ed_1024_5.1.mp4",
-    videoUrl: "https://archive.org/download/ElephantsDream/ed_1024_5.1.mp4",
-    genre: "Action",
-    genres: ["Action", "Thriller", "Crime"],
-    language: "English",
-    releaseYear: 2024,
-    duration: 110,
-    rating: 8.0,
-    director: "Kenji Sato",
-    cast: ["Ren Tanaka", "Mia Gallagher", "Dominic Reed"],
-    ageRating: "13+",
-    quality: "4K Ultra HD",
-    isFeatured: false,
-    isTrending: false,
-    isPublished: true,
-    views: 22400,
-    tags: ["Racing", "Cars", "Tokyo"],
-  },
+    "_id": "67d4f0020000000000000008",
+    "title": "Stranger Things",
+    "slug": "stranger-things",
+    "description": "When a young boy vanishes, a small town uncovers a mystery involving secret experiments, terrifying supernatural forces and one strange little girl.",
+    "posterUrl": "https://image.tmdb.org/t/p/w500/49WJfeN0moxb9IPfGn8AIqMGskD.jpg",
+    "bannerUrl": "https://image.tmdb.org/t/p/original/56v2KjBlU4XaOv9rVYEQypROD7P.jpg",
+    "trailerUrl": "https://archive.org/download/Tears-of-Steel/tears_of_steel_720p.mp4",
+    "videoUrl": "https://vidsrc.to/embed/tv/66732/1/1",
+    "streamingMirrors": [
+      {
+        "name": "⚡ Server 1 (VidSrc TV)",
+        "url": "https://vidsrc.to/embed/tv/66732/1/1",
+        "type": "embed"
+      },
+      {
+        "name": "🎬 Server 2 (VidSrc XYZ)",
+        "url": "https://vidsrc.xyz/embed/tv?tmdb=66732&season=1&episode=1",
+        "type": "embed"
+      },
+      {
+        "name": "🚀 Server 3 (MultiEmbed Fast)",
+        "url": "https://multiembed.mov/?video_id=66732&tmdb=1&s=1&e=1",
+        "type": "embed"
+      },
+      {
+        "name": "🌐 Server 4 (EmbedSU VIP)",
+        "url": "https://embed.su/embed/tv/66732/1/1",
+        "type": "embed"
+      },
+      {
+        "name": "📼 Server 5 (Direct Mirror)",
+        "url": "https://archive.org/download/BigBuckBunny_124/Content/big_buck_bunny_720p_surround.mp4",
+        "type": "video"
+      }
+    ],
+    "releaseYear": 2024,
+    "duration": "4 Seasons (All Episodes)",
+    "rating": 9.2,
+    "ageRating": "16+",
+    "quality": "4K Ultra HD",
+    "genre": "Sci-Fi",
+    "genres": [
+      "Sci-Fi",
+      "Horror",
+      "Drama",
+      "Mystery"
+    ],
+    "director": "The Duffer Brothers",
+    "cast": [
+      "Millie Bobby Brown",
+      "Finn Wolfhard",
+      "Winona Ryder"
+    ],
+    "isFeatured": false,
+    "isTrending": true,
+    "isPublished": true,
+    "views": 640000,
+    "tags": [
+      "stranger things",
+      "netflix",
+      "eleven",
+      "sci fi",
+      "hindi dub",
+      "english"
+    ]
+  }
+];
+
+export const initialReviews = [
   {
-    _id: "67d4f0020000000000000009",
-    title: "Shadows in the Mist",
-    slug: "shadows-in-the-mist",
-    description: "A remote coastal lighthouse keeper witnesses mysterious spectral figures emerging from the maritime fog during the solstice tide, guarding a forgotten seafaring curse.",
-    poster: "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=800&q=80",
-    backdrop: "https://images.unsplash.com/photo-1509281373149-e957c6296406?auto=format&fit=crop&w=1920&q=80",
-    trailerUrl: "https://archive.org/download/Tears-of-Steel/tears_of_steel_720p.mp4",
-    videoUrl: "https://archive.org/download/Tears-of-Steel/tears_of_steel_720p.mp4",
-    genre: "Horror",
-    genres: ["Horror", "Mystery", "Thriller"],
-    language: "English",
-    releaseYear: 2024,
-    duration: 104,
-    rating: 7.9,
-    director: "Gillian Thorne",
-    cast: ["Cillian Hayes", "Abigail Ward", "Sean MacLeod"],
-    ageRating: "18+",
-    quality: "1080p Full HD",
-    isFeatured: false,
-    isTrending: false,
-    isPublished: true,
-    views: 19800,
-    tags: ["Lighthouse", "Fog", "Ghosts"],
-  },
-  {
-    _id: "67d4f0020000000000000010",
-    title: "Echoes of Autumn",
-    slug: "echoes-of-autumn",
-    description: "Two classical musicians reconnect across twenty years of parallel lives through handwritten letters tucked inside vintage vinyl records sold in Paris.",
-    poster: "https://images.unsplash.com/photo-1518199266791-5375a83190b7?auto=format&fit=crop&w=800&q=80",
-    backdrop: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1920&q=80",
-    trailerUrl: "https://archive.org/download/Sintel/sintel-2048-surround.mp4",
-    videoUrl: "https://archive.org/download/Sintel/sintel-2048-surround.mp4",
-    genre: "Romance",
-    genres: ["Romance", "Drama", "Music"],
-    language: "French",
-    releaseYear: 2023,
-    duration: 118,
-    rating: 8.5,
-    director: "Jean-Paul Gautier",
-    cast: ["Camille Moreau", "Antoine Blanc", "Margot Dubois"],
-    ageRating: "PG-13",
-    quality: "4K Ultra HD",
-    isFeatured: false,
-    isTrending: false,
-    isPublished: true,
-    views: 24600,
-    tags: ["Paris", "Love", "Music"],
-  },
-  {
-    _id: "67d4f0020000000000000011",
-    title: "The Quantum Paradox",
-    slug: "the-quantum-paradox",
-    description: "When a particle accelerator experiment creates a fracture in linear causality, five scientists must navigate split realities before time irreversibly folds in on itself.",
-    poster: "https://images.unsplash.com/photo-1507499739999-097706ad8914?auto=format&fit=crop&w=800&q=80",
-    backdrop: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1920&q=80",
-    trailerUrl: "https://archive.org/download/Tears-of-Steel/tears_of_steel_720p.mp4",
-    videoUrl: "https://archive.org/download/Tears-of-Steel/tears_of_steel_720p.mp4",
-    genre: "Sci-Fi",
-    genres: ["Sci-Fi", "Thriller"],
-    language: "English",
-    releaseYear: 2025,
-    duration: 135,
-    rating: 8.8,
-    director: "Alan Turing Project",
-    cast: ["Alexander Scott", "Priya Sharma", "Oliver Berg"],
-    ageRating: "13+",
-    quality: "4K Ultra HD",
-    isFeatured: false,
-    isTrending: true,
-    isPublished: true,
-    views: 41000,
-    tags: ["Multiverse", "Time Travel", "Physics"],
-  },
-  {
-    _id: "67d4f0020000000000000012",
-    title: "Laugh Track",
-    slug: "laugh-track",
-    description: "An unscripted sitcom studio discovers that their live studio audience isn't laughing at their jokes, but secretly controlling their real-world personal choices.",
-    poster: "https://images.unsplash.com/photo-1514306191717-452ec28c7814?auto=format&fit=crop&w=800&q=80",
-    backdrop: "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&w=1920&q=80",
-    trailerUrl: "https://archive.org/download/BigBuckBunny_124/Content/big_buck_bunny_720p_surround.mp4",
-    videoUrl: "https://archive.org/download/BigBuckBunny_124/Content/big_buck_bunny_720p_surround.mp4",
-    genre: "Comedy",
-    genres: ["Comedy", "Sci-Fi", "Satire"],
-    language: "English",
-    releaseYear: 2024,
-    duration: 96,
-    rating: 7.8,
-    director: "Seth Rollins",
-    cast: ["Chris O'Dowd", "Maya Rudolph", "Keegan-Michael Key"],
-    ageRating: "13+",
-    quality: "1080p Full HD",
-    isFeatured: false,
-    isTrending: false,
-    isPublished: true,
-    views: 17300,
-    tags: ["Comedy", "Satire", "Meta"],
-  },
+    _id: '67d4f0030000000000000001',
+    movie: '67d4f0020000000000000001',
+    userName: 'Rahul Verma',
+    userAvatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80',
+    rating: 10,
+    comment: 'Allu Arjun mass performance! Best action movie of the year. 4K stream is super smooth.',
+    createdAt: new Date().toISOString(),
+  }
 ];
 
 export const inMemoryStore = {
-  movies: [...initialMovies],
   genres: [...initialGenres],
-  reviews: [
-    {
-      _id: "67d4f0030000000000000001",
-      movie: "67d4f0020000000000000001",
-      userName: "Alex Mercer",
-      userAvatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=400&q=80",
-      rating: 10,
-      comment: "Absolutely breathtaking cinematography and story! One of the best Sci-Fi films I've streamed in years.",
-      createdAt: new Date().toISOString(),
-    },
-    {
-      _id: "67d4f0030000000000000002",
-      movie: "67d4f0020000000000000002",
-      userName: "Filmvora Administrator",
-      userAvatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80",
-      rating: 9,
-      comment: "A masterpiece of sonic storytelling and cyberpunk suspense. Unmatched sound design!",
-      createdAt: new Date().toISOString(),
-    },
-  ],
+  movies: [...initialMovies],
+  reviews: [...initialReviews],
   users: [
     {
-      _id: "67d4f0040000000000000001",
-      name: "Filmvora Administrator",
-      email: "admin@filmvora.com",
-      role: "admin",
-      avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80",
-      watchlist: ["67d4f0020000000000000001", "67d4f0020000000000000002"],
-      isActive: true,
+      _id: '67d4f0040000000000000001',
+      name: 'Super Admin',
+      email: 'admin@filmvora.com',
+      role: 'admin',
+      avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80',
       createdAt: new Date().toISOString(),
-    },
-    {
-      _id: "67d4f0040000000000000002",
-      name: "Alex Mercer",
-      email: "user@filmvora.com",
-      role: "user",
-      avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=400&q=80",
-      watchlist: ["67d4f0020000000000000001", "67d4f0020000000000000003"],
-      isActive: true,
-      createdAt: new Date().toISOString(),
-    },
+    }
   ],
+  settings: {
+    siteName: 'FILMVORA',
+    siteTagline: 'Watch 4K Cinema & Web Series Free',
+    enableRegistrations: true,
+    enableReviews: true,
+    enableAdGate: true,
+    directAdUrl: 'https://publishers.monetag.com',
+    monetizationAdLink: 'https://publishers.monetag.com',
+    adCountdownSeconds: 5,
+    telegramBotToken: '',
+    telegramBotUsername: 'filmvora_bot',
+    telegramChannelId: '@filmvora_official',
+  }
 };
