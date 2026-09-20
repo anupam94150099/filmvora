@@ -17,10 +17,13 @@ import {
   Star,
   Globe,
   ArrowRight,
+  Tv,
+  Gift,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useWatchlist } from "../../context/WatchlistContext";
 import API from "../../services/api";
+import PremiumModal from "./PremiumModal";
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -33,8 +36,9 @@ const Navbar = () => {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isPremiumModalOpen, setIsPremiumModalOpen] = useState(false);
 
-  // Live Instant Search
+  // Live Instant Search Autocomplete
   const [suggestions, setSuggestions] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -110,583 +114,559 @@ const Navbar = () => {
 
   const navLinkStyle = ({ isActive }) => ({
     color: isActive ? "#ffffff" : "var(--text-secondary)",
-    fontWeight: isActive ? 600 : 500,
-    fontSize: "0.9375rem",
+    fontWeight: isActive ? 700 : 500,
+    fontSize: "0.9rem",
     position: "relative",
     padding: "0.4rem 0.2rem",
     transition: "color 0.2s ease",
+    display: "flex",
+    alignItems: "center",
+    gap: "0.35rem",
   });
 
   return (
-    <header
-      style={{
-        position: "sticky",
-        top: 0,
-        left: 0,
-        right: 0,
-        zIndex: 100,
-        backgroundColor: isScrolled ? "rgba(10, 12, 16, 0.95)" : "rgba(10, 12, 16, 0.6)",
-        backdropFilter: "blur(16px)",
-        WebkitBackdropFilter: "blur(16px)",
-        borderBottom: isScrolled ? "1px solid var(--border-subtle)" : "1px solid transparent",
-        transition: "all 0.3s ease",
-      }}
-    >
-      <div className="container" style={{ display: "flex", alignItems: "center", height: "72px", gap: "2rem" }}>
-        {/* Brand Logo */}
-        <Link
-          to="/"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "0.5rem",
-            fontSize: "1.5rem",
-            fontWeight: 900,
-            letterSpacing: "0.08em",
-            textTransform: "uppercase",
-            color: "#ffffff",
-          }}
-        >
-          <div
+    <>
+      <header
+        style={{
+          position: "sticky",
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 100,
+          backgroundColor: isScrolled ? "rgba(10, 12, 16, 0.96)" : "rgba(10, 12, 16, 0.7)",
+          backdropFilter: "blur(16px)",
+          WebkitBackdropFilter: "blur(16px)",
+          borderBottom: isScrolled ? "1px solid var(--border-subtle)" : "1px solid transparent",
+          transition: "all 0.3s ease",
+        }}
+      >
+        <div className="container" style={{ display: "flex", alignItems: "center", height: "72px", gap: "1.5rem" }}>
+          {/* Brand Logo */}
+          <Link
+            to="/"
             style={{
-              width: "32px",
-              height: "32px",
-              background: "linear-gradient(135deg, #ff1a2b, #b30710)",
-              borderRadius: "8px",
               display: "flex",
               alignItems: "center",
-              justifyContent: "center",
-              boxShadow: "0 0 16px rgba(229, 9, 20, 0.5)",
+              gap: "0.5rem",
+              fontSize: "1.45rem",
+              fontWeight: 900,
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
+              color: "#ffffff",
+              flexShrink: 0,
             }}
           >
             <div
               style={{
-                width: 0,
-                height: 0,
-                borderTop: "6px solid transparent",
-                borderBottom: "6px solid transparent",
-                borderLeft: "10px solid #ffffff",
-                marginLeft: "2px",
+                width: "32px",
+                height: "32px",
+                background: "linear-gradient(135deg, #ff1a2b, #b30710)",
+                borderRadius: "8px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                boxShadow: "0 0 16px rgba(229, 9, 20, 0.5)",
               }}
-            />
-          </div>
-          <span style={{ fontWeight: 800 }}>FILM<span style={{ color: "var(--primary)" }}>VORA</span></span>
-        </Link>
-
-        {/* Desktop Navigation Links */}
-        <nav
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "1.5rem",
-            flex: 1,
-          }}
-          className="desktop-nav"
-        >
-          <NavLink to="/" style={navLinkStyle}>
-            Home
-          </NavLink>
-          <NavLink to="/movies" style={navLinkStyle}>
-            Movies
-          </NavLink>
-          <NavLink to="/genres" style={navLinkStyle}>
-            Genres
-          </NavLink>
-          <NavLink to="/movies?trending=true" style={navLinkStyle}>
-            Trending
-          </NavLink>
-          {isAuthenticated && (
-            <NavLink to="/watchlist" style={navLinkStyle}>
-              Watchlist
-            </NavLink>
-          )}
-        </nav>
-
-        {/* Right Action Icons */}
-        <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-          {/* Search Bar / Trigger with Instant Autocomplete */}
-          <div style={{ position: "relative" }} ref={searchContainerRef}>
-            {isSearchOpen ? (
-              <form
-                onSubmit={handleSearchSubmit}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  background: "var(--bg-input)",
-                  border: "1px solid var(--border-subtle)",
-                  borderRadius: "var(--radius-full)",
-                  padding: "0.25rem 0.75rem",
-                  width: "280px",
-                }}
-              >
-                {isSearching ? (
-                  <Loader2 size={16} className="animate-spin" color="var(--primary)" style={{ marginRight: "0.4rem" }} />
-                ) : (
-                  <Search size={16} color="var(--text-muted)" style={{ marginRight: "0.4rem" }} />
-                )}
-                <input
-                  type="text"
-                  placeholder="Search any movie in the world..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onFocus={() => {
-                    if (suggestions.length > 0) setShowDropdown(true);
-                  }}
-                  autoFocus
-                  style={{
-                    background: "transparent",
-                    border: "none",
-                    outline: "none",
-                    color: "#fff",
-                    fontSize: "0.875rem",
-                    width: "100%",
-                  }}
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsSearchOpen(false);
-                    setShowDropdown(false);
-                  }}
-                  style={{ color: "var(--text-muted)", cursor: "pointer", background: "none", border: "none" }}
-                >
-                  <X size={16} />
-                </button>
-              </form>
-            ) : (
-              <button
-                onClick={() => setIsSearchOpen(true)}
-                className="btn-icon"
-                title="Search any movie"
-              >
-                <Search size={18} />
-              </button>
-            )}
-
-            {/* Live Instant Suggestions Dropdown */}
-            {showDropdown && suggestions.length > 0 && isSearchOpen && (
-              <div
-                className="fade-in"
-                style={{
-                  position: "absolute",
-                  top: "calc(100% + 10px)",
-                  right: 0,
-                  width: "360px",
-                  maxHeight: "440px",
-                  overflowY: "auto",
-                  background: "rgba(18, 22, 31, 0.98)",
-                  backdropFilter: "blur(20px)",
-                  border: "1px solid rgba(255, 255, 255, 0.12)",
-                  borderRadius: "var(--radius-md)",
-                  boxShadow: "0 20px 40px rgba(0, 0, 0, 0.8)",
-                  zIndex: 200,
-                  padding: "0.5rem",
-                }}
-              >
-                <div
-                  style={{
-                    padding: "0.4rem 0.6rem 0.5rem",
-                    borderBottom: "1px solid var(--border-subtle)",
-                    fontSize: "0.75rem",
-                    fontWeight: 700,
-                    color: "var(--text-muted)",
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                  }}
-                >
-                  <span>INSTANT RESULTS</span>
-                  <span style={{ color: "var(--primary)" }}>{suggestions.length} Movies</span>
-                </div>
-
-                <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem", marginTop: "0.4rem" }}>
-                  {suggestions.map((item) => (
-                    <div
-                      key={item._id}
-                      onClick={() => handleSelectMovie(item)}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "0.75rem",
-                        padding: "0.5rem",
-                        borderRadius: "var(--radius-xs)",
-                        cursor: "pointer",
-                        transition: "background 0.2s ease",
-                      }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255, 255, 255, 0.08)")}
-                      onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-                    >
-                      {/* Thumbnail */}
-                      <img
-                        src={item.posterUrl}
-                        alt={item.title}
-                        style={{
-                          width: "38px",
-                          height: "54px",
-                          objectFit: "cover",
-                          borderRadius: "4px",
-                          flexShrink: 0,
-                          backgroundColor: "#1f293d",
-                        }}
-                      />
-
-                      {/* Info */}
-                      <div style={{ flex: 1, minWidth: 0, textAlign: "left" }}>
-                        <div
-                          style={{
-                            fontWeight: 600,
-                            fontSize: "0.875rem",
-                            color: "#fff",
-                            whiteSpace: "nowrap",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                          }}
-                        >
-                          {item.title}
-                        </div>
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "0.5rem",
-                            marginTop: "0.2rem",
-                            fontSize: "0.75rem",
-                            color: "var(--text-muted)",
-                          }}
-                        >
-                          <span>{item.releaseYear}</span>
-                          <span>•</span>
-                          <span style={{ color: "#f5c518", display: "flex", alignItems: "center", gap: "0.2rem", fontWeight: 700 }}>
-                            <Star size={12} fill="#f5c518" /> {item.rating}
-                          </span>
-                          <span>•</span>
-                          <span style={{ color: "var(--text-secondary)" }}>{item.genre}</span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* View Full Results button */}
-                <button
-                  onClick={handleSearchSubmit}
-                  style={{
-                    width: "100%",
-                    marginTop: "0.5rem",
-                    padding: "0.6rem",
-                    background: "rgba(229, 9, 20, 0.15)",
-                    color: "var(--primary)",
-                    border: "1px solid rgba(229, 9, 20, 0.3)",
-                    borderRadius: "var(--radius-xs)",
-                    fontSize: "0.8rem",
-                    fontWeight: 700,
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: "0.4rem",
-                  }}
-                >
-                  <span>See all results for "{searchQuery}"</span>
-                  <ArrowRight size={14} />
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Watchlist Quick Button */}
-          {isAuthenticated && (
-            <Link
-              to="/watchlist"
-              className="btn-icon"
-              style={{ position: "relative" }}
-              title="Your Watchlist"
             >
-              <Bookmark size={18} />
-              {watchlist.length > 0 && (
-                <span
+              <div
+                style={{
+                  width: 0,
+                  height: 0,
+                  borderTop: "6px solid transparent",
+                  borderBottom: "6px solid transparent",
+                  borderLeft: "10px solid #ffffff",
+                  marginLeft: "2px",
+                }}
+              />
+            </div>
+            <span style={{ fontWeight: 800 }}>FILM<span style={{ color: "var(--primary)" }}>VORA</span></span>
+          </Link>
+
+          {/* Desktop Navigation Links */}
+          <nav
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "1.2rem",
+              flex: 1,
+            }}
+            className="desktop-nav"
+          >
+            <NavLink to="/" style={navLinkStyle}>
+              Home
+            </NavLink>
+            <NavLink to="/movies" style={navLinkStyle}>
+              Movies
+            </NavLink>
+            <NavLink to="/series" style={navLinkStyle}>
+              <Tv size={15} /> TV Series
+            </NavLink>
+            <NavLink to="/free-stream" style={navLinkStyle}>
+              <Gift size={15} color="#10b981" /> <span style={{ color: "#10b981" }}>Free to Stream</span>
+            </NavLink>
+            <NavLink to="/genres" style={navLinkStyle}>
+              Genres
+            </NavLink>
+            <NavLink to="/trending" style={navLinkStyle}>
+              Trending
+            </NavLink>
+            <NavLink to="/top-rated" style={navLinkStyle}>
+              Top Rated
+            </NavLink>
+            <NavLink to="/upcoming" style={navLinkStyle}>
+              Upcoming
+            </NavLink>
+            {isAuthenticated && (
+              <NavLink to="/watchlist" style={navLinkStyle}>
+                Watchlist
+              </NavLink>
+            )}
+          </nav>
+
+          {/* Right Action Icons */}
+          <div style={{ display: "flex", alignItems: "center", gap: "0.85rem", flexShrink: 0 }}>
+            {/* VIP Upgrade Button */}
+            <button
+              onClick={() => setIsPremiumModalOpen(true)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "0.4rem",
+                padding: "0.4rem 0.85rem",
+                background: "linear-gradient(135deg, rgba(245, 197, 24, 0.15) 0%, rgba(229, 9, 20, 0.2) 100%)",
+                border: "1px solid rgba(245, 197, 24, 0.4)",
+                borderRadius: "var(--radius-full)",
+                color: "#f5c518",
+                fontSize: "0.8rem",
+                fontWeight: 700,
+                cursor: "pointer",
+                transition: "all var(--transition-fast)",
+              }}
+              className="desktop-nav"
+            >
+              <Sparkles size={14} />
+              <span>VIP PASS</span>
+            </button>
+
+            {/* Search Bar / Trigger with Instant Autocomplete */}
+            <div style={{ position: "relative" }} ref={searchContainerRef}>
+              {isSearchOpen ? (
+                <form
+                  onSubmit={handleSearchSubmit}
                   style={{
-                    position: "absolute",
-                    top: "3px",
-                    right: "3px",
-                    background: "var(--primary)",
-                    color: "#fff",
-                    fontSize: "0.65rem",
-                    fontWeight: 700,
-                    width: "16px",
-                    height: "16px",
-                    borderRadius: "50%",
                     display: "flex",
                     alignItems: "center",
-                    justifyContent: "center",
+                    background: "var(--bg-input)",
+                    border: "1px solid var(--border-subtle)",
+                    borderRadius: "var(--radius-full)",
+                    padding: "0.25rem 0.75rem",
+                    width: "280px",
                   }}
                 >
-                  {watchlist.length}
-                </span>
+                  {isSearching ? (
+                    <Loader2 size={16} className="animate-spin" color="var(--primary)" style={{ marginRight: "0.4rem" }} />
+                  ) : (
+                    <Search size={16} color="var(--text-muted)" style={{ marginRight: "0.4rem" }} />
+                  )}
+                  <input
+                    type="text"
+                    placeholder="Search any title, cast, genre..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onFocus={() => {
+                      if (suggestions.length > 0) setShowDropdown(true);
+                    }}
+                    autoFocus
+                    style={{
+                      background: "transparent",
+                      border: "none",
+                      outline: "none",
+                      color: "#fff",
+                      fontSize: "0.875rem",
+                      width: "100%",
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsSearchOpen(false);
+                      setShowDropdown(false);
+                    }}
+                    style={{ color: "var(--text-muted)", cursor: "pointer", background: "none", border: "none" }}
+                  >
+                    <X size={16} />
+                  </button>
+                </form>
+              ) : (
+                <button
+                  onClick={() => setIsSearchOpen(true)}
+                  className="btn-icon"
+                  title="Search movies and series"
+                >
+                  <Search size={18} />
+                </button>
               )}
-            </Link>
-          )}
 
-          {/* User Profile / Login Dropdown */}
-          {isAuthenticated ? (
-            <div style={{ position: "relative" }}>
-              <button
-                onClick={() => setIsUserMenuOpen((prev) => !prev)}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.5rem",
-                  background: "rgba(255, 255, 255, 0.08)",
-                  padding: "0.3rem 0.6rem",
-                  borderRadius: "var(--radius-full)",
-                  border: "1px solid var(--border-subtle)",
-                  cursor: "pointer",
-                }}
-              >
-                <img
-                  src={user?.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80"}
-                  alt={user?.name}
-                  style={{ width: "28px", height: "28px", borderRadius: "50%", objectFit: "cover" }}
-                />
-                <span
-                  style={{
-                    fontSize: "0.85rem",
-                    fontWeight: 600,
-                    color: "#fff",
-                    maxWidth: "90px",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                  }}
-                  className="user-name-label"
-                >
-                  {user?.name?.split(" ")[0]}
-                </span>
-                <ChevronDown size={14} color="var(--text-muted)" />
-              </button>
-
-              {/* User Dropdown */}
-              {isUserMenuOpen && (
+              {/* Live Instant Suggestions Dropdown */}
+              {showDropdown && suggestions.length > 0 && isSearchOpen && (
                 <div
+                  className="fade-in"
                   style={{
                     position: "absolute",
-                    top: "46px",
+                    top: "calc(100% + 10px)",
                     right: 0,
-                    background: "var(--bg-card)",
-                    border: "1px solid var(--border-subtle)",
+                    width: "360px",
+                    maxHeight: "440px",
+                    overflowY: "auto",
+                    background: "rgba(18, 22, 31, 0.98)",
+                    backdropFilter: "blur(20px)",
+                    border: "1px solid rgba(255, 255, 255, 0.12)",
                     borderRadius: "var(--radius-md)",
+                    boxShadow: "0 20px 40px rgba(0, 0, 0, 0.8)",
+                    zIndex: 200,
                     padding: "0.5rem",
-                    minWidth: "210px",
-                    boxShadow: "var(--shadow-lg)",
-                    zIndex: 110,
-                    animation: "fadeIn 0.15s ease-out",
                   }}
                 >
                   <div
                     style={{
-                      padding: "0.5rem 0.75rem",
+                      padding: "0.4rem 0.6rem 0.5rem",
                       borderBottom: "1px solid var(--border-subtle)",
-                      marginBottom: "0.4rem",
+                      fontSize: "0.75rem",
+                      fontWeight: 700,
+                      color: "var(--text-muted)",
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
                     }}
                   >
-                    <div style={{ fontWeight: 600, fontSize: "0.9rem", color: "#fff" }}>
-                      {user?.name}
-                    </div>
-                    <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
-                      {user?.email}
-                    </div>
+                    <span>SEARCH SUGGESTIONS</span>
+                    <span style={{ color: "var(--primary)" }}>{suggestions.length} Titles</span>
                   </div>
 
-                  {isAdmin && (
-                    <Link
-                      to="/admin"
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "0.6rem",
-                        padding: "0.6rem 0.75rem",
-                        fontSize: "0.875rem",
-                        color: "var(--primary)",
-                        borderRadius: "var(--radius-xs)",
-                        fontWeight: 600,
-                      }}
-                    >
-                      <Shield size={16} />
-                      Admin Dashboard
-                    </Link>
-                  )}
+                  <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem", marginTop: "0.4rem" }}>
+                    {suggestions.map((item) => (
+                      <div
+                        key={item._id}
+                        onClick={() => handleSelectMovie(item)}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "0.75rem",
+                          padding: "0.5rem",
+                          borderRadius: "var(--radius-xs)",
+                          cursor: "pointer",
+                          transition: "background 0.2s ease",
+                        }}
+                        onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255, 255, 255, 0.08)")}
+                        onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                      >
+                        <img
+                          src={item.posterUrl}
+                          alt={item.title}
+                          style={{
+                            width: "38px",
+                            height: "54px",
+                            objectFit: "cover",
+                            borderRadius: "4px",
+                            flexShrink: 0,
+                            backgroundColor: "#1f293d",
+                          }}
+                        />
 
-                  <Link
-                    to="/profile"
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "0.6rem",
-                      padding: "0.6rem 0.75rem",
-                      fontSize: "0.875rem",
-                      color: "var(--text-main)",
-                      borderRadius: "var(--radius-xs)",
-                    }}
-                  >
-                    <User size={16} />
-                    My Profile
-                  </Link>
-
-                  <Link
-                    to="/watchlist"
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "0.6rem",
-                      padding: "0.6rem 0.75rem",
-                      fontSize: "0.875rem",
-                      color: "var(--text-main)",
-                      borderRadius: "var(--radius-xs)",
-                    }}
-                  >
-                    <Bookmark size={16} />
-                    Watchlist ({watchlist.length})
-                  </Link>
+                        <div style={{ flex: 1, minWidth: 0, textAlign: "left" }}>
+                          <div
+                            style={{
+                              fontWeight: 600,
+                              fontSize: "0.875rem",
+                              color: "#fff",
+                              whiteSpace: "nowrap",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                            }}
+                          >
+                            {item.title}
+                          </div>
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "0.5rem",
+                              marginTop: "0.2rem",
+                              fontSize: "0.75rem",
+                              color: "var(--text-muted)",
+                            }}
+                          >
+                            <span>{item.releaseYear}</span>
+                            <span>•</span>
+                            <span style={{ color: "#f5c518", display: "flex", alignItems: "center", gap: "0.2rem", fontWeight: 700 }}>
+                              <Star size={12} fill="#f5c518" /> {item.rating}
+                            </span>
+                            <span>•</span>
+                            <span
+                              style={{
+                                color: item.availability === "PUBLIC_DOMAIN" || item.availability === "CREATIVE_COMMONS" ? "#10b981" : "var(--primary)",
+                                fontWeight: 600,
+                                fontSize: "0.7rem",
+                              }}
+                            >
+                              {item.availability === "PUBLIC_DOMAIN" ? "FREE STREAM" : "WHERE TO WATCH"}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
 
                   <button
-                    onClick={logout}
+                    onClick={handleSearchSubmit}
                     style={{
                       width: "100%",
+                      marginTop: "0.5rem",
+                      padding: "0.6rem",
+                      background: "rgba(229, 9, 20, 0.15)",
+                      color: "var(--primary)",
+                      border: "1px solid rgba(229, 9, 20, 0.3)",
+                      borderRadius: "var(--radius-xs)",
+                      fontSize: "0.8rem",
+                      fontWeight: 700,
+                      cursor: "pointer",
                       display: "flex",
                       alignItems: "center",
-                      gap: "0.6rem",
-                      padding: "0.6rem 0.75rem",
-                      fontSize: "0.875rem",
-                      color: "#ef4444",
-                      borderRadius: "var(--radius-xs)",
-                      textAlign: "left",
-                      marginTop: "0.3rem",
-                      borderTop: "1px solid var(--border-subtle)",
+                      justifyContent: "center",
+                      gap: "0.4rem",
                     }}
                   >
-                    <LogOut size={16} />
-                    Sign Out
+                    <span>View all matching results for "{searchQuery}"</span>
+                    <ArrowRight size={14} />
                   </button>
                 </div>
               )}
             </div>
-          ) : (
-            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-              <Link to="/login" className="btn btn-secondary btn-sm">
-                Sign In
-              </Link>
-              <Link to="/register" className="btn btn-primary btn-sm">
-                Get Started
-              </Link>
-            </div>
-          )}
 
-          {/* Mobile Hamburger Toggle */}
-          <button
-            onClick={() => setIsMobileMenuOpen((prev) => !prev)}
-            className="btn-icon mobile-menu-toggle"
-            aria-label="Toggle Navigation"
-          >
-            {isMobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
-          </button>
+            {/* Watchlist Quick Button */}
+            {isAuthenticated && (
+              <Link
+                to="/watchlist"
+                className="btn-icon"
+                title="Your Watchlist"
+                style={{ position: "relative" }}
+              >
+                <Bookmark size={18} />
+                {watchlist.length > 0 && (
+                  <span
+                    style={{
+                      position: "absolute",
+                      top: "4px",
+                      right: "4px",
+                      background: "var(--primary)",
+                      color: "#fff",
+                      fontSize: "0.65rem",
+                      fontWeight: 800,
+                      width: "16px",
+                      height: "16px",
+                      borderRadius: "50%",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    {watchlist.length}
+                  </span>
+                )}
+              </Link>
+            )}
+
+            {/* User Profile / Admin Menu */}
+            {isAuthenticated ? (
+              <div style={{ position: "relative" }}>
+                <button
+                  onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.5rem",
+                    background: "rgba(255, 255, 255, 0.05)",
+                    border: "1px solid var(--border-subtle)",
+                    borderRadius: "var(--radius-full)",
+                    padding: "0.25rem 0.6rem 0.25rem 0.3rem",
+                    color: "#fff",
+                    cursor: "pointer",
+                  }}
+                >
+                  <img
+                    src={user?.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&q=80"}
+                    alt={user?.name || "User"}
+                    style={{ width: "28px", height: "28px", borderRadius: "50%", objectFit: "cover" }}
+                  />
+                  <ChevronDown size={14} color="var(--text-secondary)" />
+                </button>
+
+                {isUserMenuOpen && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: "calc(100% + 8px)",
+                      right: 0,
+                      width: "200px",
+                      background: "var(--bg-card)",
+                      border: "1px solid var(--border-subtle)",
+                      borderRadius: "var(--radius-md)",
+                      boxShadow: "var(--shadow-lg)",
+                      padding: "0.5rem",
+                      zIndex: 200,
+                    }}
+                  >
+                    <div style={{ padding: "0.5rem 0.75rem", borderBottom: "1px solid var(--border-subtle)", marginBottom: "0.4rem" }}>
+                      <div style={{ fontWeight: 700, fontSize: "0.9rem", color: "#fff" }}>{user?.name}</div>
+                      <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>{user?.email}</div>
+                    </div>
+
+                    {isAdmin && (
+                      <Link
+                        to="/admin"
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "0.5rem",
+                          padding: "0.5rem 0.75rem",
+                          color: "#f5c518",
+                          fontSize: "0.875rem",
+                          fontWeight: 600,
+                          borderRadius: "var(--radius-xs)",
+                        }}
+                      >
+                        <Shield size={16} /> Admin Portal
+                      </Link>
+                    )}
+
+                    <Link
+                      to="/profile"
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.5rem",
+                        padding: "0.5rem 0.75rem",
+                        color: "var(--text-secondary)",
+                        fontSize: "0.875rem",
+                        borderRadius: "var(--radius-xs)",
+                      }}
+                    >
+                      <User size={16} /> Profile & Library
+                    </Link>
+
+                    <button
+                      onClick={logout}
+                      style={{
+                        width: "100%",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.5rem",
+                        padding: "0.5rem 0.75rem",
+                        color: "#ef4444",
+                        fontSize: "0.875rem",
+                        borderRadius: "var(--radius-xs)",
+                        cursor: "pointer",
+                        marginTop: "0.25rem",
+                        borderTop: "1px solid var(--border-subtle)",
+                      }}
+                    >
+                      <LogOut size={16} /> Log Out
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                <Link to="/login" className="btn btn-secondary" style={{ padding: "0.45rem 0.9rem", fontSize: "0.85rem" }}>
+                  Sign In
+                </Link>
+                <Link to="/register" className="btn btn-primary" style={{ padding: "0.45rem 0.9rem", fontSize: "0.85rem" }}>
+                  Sign Up
+                </Link>
+              </div>
+            )}
+
+            {/* Mobile Menu Hamburger Toggle */}
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="btn-icon mobile-menu-toggle"
+              style={{ display: "none" }}
+            >
+              {isMobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
+            </button>
+          </div>
         </div>
-      </div>
 
-      {/* Mobile Drawer Menu */}
-      {isMobileMenuOpen && (
-        <div
-          style={{
-            background: "var(--bg-card)",
-            borderBottom: "1px solid var(--border-subtle)",
-            padding: "1.5rem",
-            display: "flex",
-            flexDirection: "column",
-            gap: "1rem",
-          }}
-          className="mobile-drawer"
-        >
-          <form onSubmit={handleSearchSubmit} style={{ marginBottom: "0.5rem" }}>
-            <div
+        {/* Mobile Navigation Drawer */}
+        {isMobileMenuOpen && (
+          <div
+            style={{
+              padding: "1rem 1.5rem 1.5rem",
+              background: "rgba(10, 12, 16, 0.98)",
+              borderTop: "1px solid var(--border-subtle)",
+              display: "flex",
+              flexDirection: "column",
+              gap: "0.75rem",
+            }}
+          >
+            <NavLink to="/" style={navLinkStyle}>
+              Home
+            </NavLink>
+            <NavLink to="/movies" style={navLinkStyle}>
+              Movies
+            </NavLink>
+            <NavLink to="/series" style={navLinkStyle}>
+              <Tv size={15} /> TV Series
+            </NavLink>
+            <NavLink to="/free-stream" style={navLinkStyle}>
+              <Gift size={15} color="#10b981" /> Free to Stream
+            </NavLink>
+            <NavLink to="/genres" style={navLinkStyle}>
+              Genres
+            </NavLink>
+            <NavLink to="/trending" style={navLinkStyle}>
+              Trending
+            </NavLink>
+            <NavLink to="/top-rated" style={navLinkStyle}>
+              Top Rated
+            </NavLink>
+            <NavLink to="/upcoming" style={navLinkStyle}>
+              Upcoming
+            </NavLink>
+            {isAuthenticated && (
+              <NavLink to="/watchlist" style={navLinkStyle}>
+                Watchlist ({watchlist.length})
+              </NavLink>
+            )}
+            <button
+              onClick={() => {
+                setIsMobileMenuOpen(false);
+                setIsPremiumModalOpen(true);
+              }}
               style={{
+                marginTop: "0.5rem",
+                padding: "0.6rem",
+                background: "linear-gradient(135deg, #f5c518 0%, #e50914 100%)",
+                color: "#fff",
+                fontWeight: 700,
+                borderRadius: "var(--radius-sm)",
+                border: "none",
                 display: "flex",
                 alignItems: "center",
-                background: "var(--bg-input)",
-                border: "1px solid var(--border-subtle)",
-                borderRadius: "var(--radius-sm)",
-                padding: "0.6rem 1rem",
+                justifyContent: "center",
+                gap: "0.5rem",
               }}
             >
-              <Search size={18} color="var(--text-muted)" style={{ marginRight: "0.5rem" }} />
-              <input
-                type="text"
-                placeholder="Search movies..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                style={{
-                  background: "transparent",
-                  border: "none",
-                  outline: "none",
-                  color: "#fff",
-                  width: "100%",
-                }}
-              />
-            </div>
-          </form>
+              <Sparkles size={16} />
+              <span>Upgrade to VIP Pass</span>
+            </button>
+          </div>
+        )}
+      </header>
 
-          <NavLink to="/" style={navLinkStyle}>
-            Home
-          </NavLink>
-          <NavLink to="/movies" style={navLinkStyle}>
-            Movies Catalog
-          </NavLink>
-          <NavLink to="/genres" style={navLinkStyle}>
-            Browse Genres
-          </NavLink>
-          <NavLink to="/movies?trending=true" style={navLinkStyle}>
-            Trending Now
-          </NavLink>
-
-          {isAuthenticated ? (
-            <>
-              <NavLink to="/watchlist" style={navLinkStyle}>
-                My Watchlist ({watchlist.length})
-              </NavLink>
-              <NavLink to="/profile" style={navLinkStyle}>
-                User Profile
-              </NavLink>
-              {isAdmin && (
-                <NavLink to="/admin" style={{ ...navLinkStyle({ isActive: false }), color: "var(--primary)" }}>
-                  Admin Control Panel
-                </NavLink>
-              )}
-              <button
-                onClick={logout}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.5rem",
-                  color: "#ef4444",
-                  fontSize: "0.95rem",
-                  fontWeight: 600,
-                  marginTop: "0.5rem",
-                }}
-              >
-                <LogOut size={18} /> Sign Out
-              </button>
-            </>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", marginTop: "0.5rem" }}>
-              <Link to="/login" className="btn btn-secondary">
-                Sign In
-              </Link>
-              <Link to="/register" className="btn btn-primary">
-                Create Free Account
-              </Link>
-            </div>
-          )}
-        </div>
-      )}
-    </header>
+      {/* VIP Premium Modal */}
+      <PremiumModal isOpen={isPremiumModalOpen} onClose={() => setIsPremiumModalOpen(false)} />
+    </>
   );
 };
 

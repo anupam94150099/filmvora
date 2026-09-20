@@ -1,387 +1,312 @@
-import React, { useState, useEffect } from "react";
-import {
-  Download,
-  X,
-  ShieldCheck,
-  CheckCircle2,
-  Loader2,
-  Sparkles,
-  ExternalLink,
-  Zap,
-  Gift,
-  Send,
-  Lock,
-  ArrowRight,
-  Tv,
-} from "lucide-react";
-import API from "../../services/api";
-import { useToast } from "../../context/ToastContext";
+import React, { useState } from "react";
+import { X, Download, ShieldCheck, ExternalLink, Film, AlertCircle, CheckCircle2 } from "lucide-react";
+import { movieService } from "../../services/movieService";
 
 const DownloadModal = ({ isOpen, onClose, movie }) => {
-  const { success, info } = useToast();
-  const [selectedQuality, setSelectedQuality] = useState("1080p");
-  const [selectedAudio, setSelectedAudio] = useState("Hindi Dub (Dolby 5.1)");
-  
-  // Steps: 1: Choose Quality, 2: Ad Gate 1, 3: Ad Gate 2, 4: Download Ready
-  const [step, setStep] = useState(1);
-  const [countdown, setCountdown] = useState(5);
-  const [ad1Clicked, setAd1Clicked] = useState(false);
-  const [ad2Clicked, setAd2Clicked] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [downloadDetails, setDownloadDetails] = useState(null);
-
-  const [monetizationUrl, setMonetizationUrl] = useState("https://publishers.monetag.com");
-
-  useEffect(() => {
-    // Load monetization settings from system
-    API.get("/settings")
-      .then((res) => {
-        if (res.data && res.data.monetizationAdLink) {
-          setMonetizationUrl(res.data.monetizationAdLink);
-        }
-      })
-      .catch(() => {
-        const saved = localStorage.getItem("filmvora_settings");
-        if (saved) {
-          try {
-            const parsed = JSON.parse(saved);
-            if (parsed.directAdUrl || parsed.monetizationAdLink) {
-              setMonetizationUrl(parsed.directAdUrl || parsed.monetizationAdLink);
-            }
-          } catch (e) {}
-        }
-      });
-  }, []);
-
-  useEffect(() => {
-    if (isOpen) {
-      setStep(1);
-      setCountdown(5);
-      setAd1Clicked(false);
-      setAd2Clicked(false);
-      setDownloadDetails(null);
-    }
-  }, [isOpen]);
-
-  // Countdown timer for ad steps
-  useEffect(() => {
-    let timer;
-    if ((step === 2 || step === 3) && countdown > 0) {
-      timer = setInterval(() => {
-        setCountdown((prev) => prev - 1);
-      }, 1000);
-    }
-    return () => clearInterval(timer);
-  }, [step, countdown]);
-
   if (!isOpen || !movie) return null;
 
-  const cleanTitle = (movie.title || "Movie").replace(/[^a-zA-Z0-9 ]/g, "").replace(/\s+/g, "_");
+  const [quality, setQuality] = useState("1080p");
+  const [downloading, setDownloading] = useState(false);
+  const [downloadData, setDownloadData] = useState(null);
+  const [errorMsg, setErrorMsg] = useState("");
 
-  // Step 1 -> Step 2
-  const handleProceedToAdGate = async () => {
-    setIsProcessing(true);
-    const fallbackDownload = {
-      title: movie.title || "Movie",
-      filename: `${cleanTitle}_${selectedQuality.toUpperCase()}_Filmvora.mp4`,
-      quality: selectedQuality.toUpperCase(),
-      audio: selectedAudio,
-      fileSize: selectedQuality === "4k" ? "2.8 GB" : selectedQuality === "1080p" ? "1.4 GB" : "750 MB",
-      downloadUrl: "https://archive.org/download/BigBuckBunny_124/Content/big_buck_bunny_720p_surround.mp4",
-    };
+  const isLegalDownloadable =
+    (movie.availability === "PUBLIC_DOMAIN" ||
+      movie.availability === "CREATIVE_COMMONS" ||
+      movie.availability === "LICENSED" ||
+      movie.availability === "OWNED") &&
+    Boolean(movie.downloadUrl || movie.watchUrl);
 
+  const handleStartDownload = async () => {
+    setDownloading(true);
+    setErrorMsg("");
     try {
-      const response = await API.post(`/movies/${movie.slug || movie._id}/download`, {
-        quality: selectedQuality,
-        audio: selectedAudio,
-      });
-      if (response.data && response.data.success) {
-        setDownloadDetails(response.data.download);
+      const res = await movieService.requestDownload(movie._id || movie.slug, quality);
+      if (res.success && res.download) {
+        setDownloadData(res.download);
+        // Trigger browser download
+        const a = document.createElement("a");
+        a.href = res.download.downloadUrl;
+        a.download = res.download.filename;
+        a.target = "_blank";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
       } else {
-        setDownloadDetails(fallbackDownload);
+        setErrorMsg(res.message || "Download not available for this title.");
       }
     } catch (err) {
-      setDownloadDetails(fallbackDownload);
+      setErrorMsg(err.response?.data?.message || "Download request failed. Please check legal sources.");
     } finally {
-      setIsProcessing(false);
-      setStep(2);
-      setCountdown(5);
+      setDownloading(false);
     }
   };
-
-  // Click Ad 1 -> Moves to Step 3
-  const handleAd1Click = () => {
-    setAd1Clicked(true);
-    if (monetizationUrl) {
-      window.open(monetizationUrl, "_blank");
-      info("Sponsor link opened. Verifying server slot...");
-    }
-    setTimeout(() => {
-      setStep(3);
-      setCountdown(4);
-    }, 1200);
-  };
-
-  // Click Ad 2 -> Moves to Final Download Step 4
-  const handleAd2Click = () => {
-    setAd2Clicked(true);
-    if (monetizationUrl) {
-      window.open(monetizationUrl, "_blank");
-      info("High-speed CDN unlocked!");
-    }
-    setTimeout(() => {
-      setStep(4);
-    }, 1200);
-  };
-
-  // Trigger real file download in browser
-  const handleFinalDownload = () => {
-    if (!downloadDetails) return;
-    success(`Downloading "${downloadDetails.title}" in ${downloadDetails.quality}`);
-
-    const a = document.createElement("a");
-    a.href = downloadDetails.downloadUrl;
-    a.download = downloadDetails.filename;
-    a.target = "_blank";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-  };
-
-  const options = [
-    { id: "4k", name: "4K Ultra HD", size: "2.8 GB", desc: "3840x2160 • HEVC 60FPS • Dolby Atmos" },
-    { id: "1080p", name: "1080p Full HD", size: "1.4 GB", desc: "1920x1080 • AVC H.264 • Most Popular" },
-    { id: "720p", name: "720p HD", size: "750 MB", desc: "1280x720 • Fast Mobile Download" },
-  ];
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 9999,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "rgba(0, 0, 0, 0.85)",
+        backdropFilter: "blur(8px)",
+        padding: "1rem",
+      }}
+      onClick={onClose}
+    >
       <div
-        className="modal-content"
-        style={{ maxWidth: "540px", padding: "1.75rem", overflow: "hidden", background: "var(--bg-secondary)", borderRadius: "var(--radius-lg)", border: "1px solid var(--border-subtle)" }}
+        style={{
+          background: "linear-gradient(135deg, #131722 0%, #0a0c10 100%)",
+          border: "1px solid rgba(255, 255, 255, 0.12)",
+          borderRadius: "var(--radius-lg)",
+          maxWidth: "560px",
+          width: "100%",
+          padding: "2rem",
+          position: "relative",
+          boxShadow: "0 25px 50px rgba(0, 0, 0, 0.8)",
+        }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className="flex-between" style={{ marginBottom: "1.25rem", borderBottom: "1px solid var(--border-subtle)", pb: "1rem" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
-            <div
-              style={{
-                width: "38px",
-                height: "38px",
-                borderRadius: "10px",
-                background: "rgba(229, 9, 20, 0.15)",
-                color: "var(--primary)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Download size={20} />
-            </div>
-            <div>
-              <h3 style={{ fontSize: "1.15rem", fontWeight: 700, color: "#fff" }}>
-                {step === 1 && "Download Movie in HD"}
-                {step === 2 && "Step 1 of 2: Unlock Sponsor Gate"}
-                {step === 3 && "Step 2 of 2: Fast CDN Allocation"}
-                {step === 4 && "Download Link Ready!"}
-              </h3>
-              <p style={{ color: "var(--text-muted)", fontSize: "0.8rem" }}>{movie.title}</p>
-            </div>
+        {/* Close Button */}
+        <button
+          onClick={onClose}
+          style={{
+            position: "absolute",
+            top: "1.2rem",
+            right: "1.2rem",
+            color: "var(--text-secondary)",
+            background: "rgba(255, 255, 255, 0.08)",
+            borderRadius: "50%",
+            width: "36px",
+            height: "36px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+          }}
+        >
+          <X size={20} />
+        </button>
+
+        {/* Modal Title */}
+        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1rem" }}>
+          <div
+            style={{
+              width: "44px",
+              height: "44px",
+              borderRadius: "var(--radius-sm)",
+              background: isLegalDownloadable ? "rgba(16, 185, 129, 0.15)" : "rgba(229, 9, 20, 0.15)",
+              color: isLegalDownloadable ? "var(--accent-emerald)" : "var(--primary)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            {isLegalDownloadable ? <Download size={24} /> : <Film size={24} />}
           </div>
-          <button onClick={onClose} className="btn-icon" style={{ width: "32px", height: "32px" }}>
-            <X size={18} />
-          </button>
+          <div>
+            <h3 style={{ fontSize: "1.25rem", fontWeight: 700, color: "#fff", margin: 0 }}>
+              {isLegalDownloadable ? "Legal File Download" : "Content Availability Guide"}
+            </h3>
+            <span style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>
+              {movie.title} ({movie.releaseYear})
+            </span>
+          </div>
         </div>
 
-        {/* STEP 1: Select Quality & Dubbing */}
-        {step === 1 && (
-          <div className="space-y-4">
-            <div>
-              <label className="form-label" style={{ marginBottom: "0.5rem", display: "block", fontSize: "0.85rem", color: "var(--text-secondary)" }}>
-                Select Video Resolution:
+        {/* Content Body */}
+        {isLegalDownloadable ? (
+          <div>
+            <div
+              style={{
+                background: "rgba(16, 185, 129, 0.08)",
+                border: "1px solid rgba(16, 185, 129, 0.25)",
+                borderRadius: "var(--radius-sm)",
+                padding: "0.9rem",
+                display: "flex",
+                alignItems: "center",
+                gap: "0.75rem",
+                marginBottom: "1.5rem",
+                fontSize: "0.85rem",
+                color: "#6ee7b7",
+              }}
+            >
+              <ShieldCheck size={20} style={{ flexShrink: 0 }} />
+              <div>
+                <strong>Legally Licensed / Public Domain:</strong> This file is free and authorized for personal offline viewing under open distribution terms.
+              </div>
+            </div>
+
+            {/* Quality Selector */}
+            <div style={{ marginBottom: "1.5rem" }}>
+              <label style={{ display: "block", fontSize: "0.85rem", color: "var(--text-secondary)", marginBottom: "0.5rem" }}>
+                Select Resolution Quality:
               </label>
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                {options.map((opt) => (
-                  <div
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "0.75rem" }}>
+                {[
+                  { id: "4k", label: "4K Ultra HD", size: "~1.8 GB" },
+                  { id: "1080p", label: "1080p Full HD", size: "~950 MB" },
+                  { id: "720p", label: "720p HD", size: "~480 MB" },
+                ].map((opt) => (
+                  <button
                     key={opt.id}
-                    onClick={() => setSelectedQuality(opt.id)}
+                    onClick={() => setQuality(opt.id)}
                     style={{
-                      border: selectedQuality === opt.id ? "1px solid var(--primary)" : "1px solid var(--border-subtle)",
-                      background: selectedQuality === opt.id ? "rgba(229, 9, 20, 0.1)" : "var(--bg-card)",
-                      padding: "0.75rem 1rem",
-                      borderRadius: "var(--radius-md)",
+                      padding: "0.75rem 0.5rem",
+                      borderRadius: "var(--radius-sm)",
+                      border: quality === opt.id ? "2px solid var(--accent-emerald)" : "1px solid rgba(255, 255, 255, 0.1)",
+                      background: quality === opt.id ? "rgba(16, 185, 129, 0.15)" : "rgba(255, 255, 255, 0.03)",
+                      color: quality === opt.id ? "#fff" : "var(--text-secondary)",
                       cursor: "pointer",
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      transition: "all 0.2s ease",
+                      textAlign: "center",
                     }}
                   >
-                    <div>
-                      <div style={{ fontWeight: 700, color: "#fff", fontSize: "0.9rem" }}>{opt.name}</div>
-                      <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>{opt.desc}</div>
-                    </div>
-                    <span className="badge badge-glass" style={{ fontSize: "0.75rem", fontWeight: 700, background: "rgba(255,255,255,0.1)" }}>
-                      {opt.size}
-                    </span>
-                  </div>
+                    <div style={{ fontWeight: 700, fontSize: "0.9rem" }}>{opt.label}</div>
+                    <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>{opt.size}</div>
+                  </button>
                 ))}
               </div>
             </div>
 
-            <div style={{ marginTop: "1rem" }}>
-              <label className="form-label" style={{ marginBottom: "0.4rem", display: "block", fontSize: "0.85rem", color: "var(--text-secondary)" }}>
-                Select Audio / Language:
-              </label>
-              <select
-                value={selectedAudio}
-                onChange={(e) => setSelectedAudio(e.target.value)}
-                className="form-select"
-                style={{ width: "100%", padding: "0.6rem 0.8rem", background: "var(--bg-card)", border: "1px solid var(--border-subtle)", borderRadius: "var(--radius-sm)", color: "#fff" }}
+            {errorMsg && (
+              <div style={{ color: "#ef4444", fontSize: "0.85rem", marginBottom: "1rem" }}>
+                {errorMsg}
+              </div>
+            )}
+
+            {downloadData && (
+              <div
+                style={{
+                  background: "rgba(16, 185, 129, 0.1)",
+                  border: "1px solid rgba(16, 185, 129, 0.3)",
+                  borderRadius: "var(--radius-sm)",
+                  padding: "1rem",
+                  marginBottom: "1rem",
+                }}
               >
-                <option value="Hindi Dub (Dolby 5.1)">Hindi Dubbed (Dolby Atmos 5.1)</option>
-                <option value="Dual Audio (Hindi + English)">Dual Audio (Hindi + English)</option>
-                <option value="Original English (5.1)">Original Language (English Subtitles)</option>
-                <option value="Tamil / Telugu Dub">South Multi-Audio (Tamil / Telugu)</option>
-              </select>
-            </div>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "#10b981", fontWeight: 700, fontSize: "0.9rem", marginBottom: "0.3rem" }}>
+                  <CheckCircle2 size={18} />
+                  Download initiated!
+                </div>
+                <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)", margin: 0 }}>
+                  If your browser didn't start the download automatically,{" "}
+                  <a href={downloadData.downloadUrl} target="_blank" rel="noopener noreferrer" style={{ color: "var(--accent-cyan)", textDecoration: "underline" }}>
+                    click here to direct download
+                  </a>.
+                </p>
+              </div>
+            )}
 
             <button
-              onClick={handleProceedToAdGate}
-              disabled={isProcessing}
+              onClick={handleStartDownload}
+              disabled={downloading}
               className="btn btn-primary"
-              style={{ width: "100%", padding: "0.85rem", marginTop: "1.25rem", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem" }}
-            >
-              {isProcessing ? (
-                <>
-                  <Loader2 size={18} className="animate-spin" />
-                  <span>Connecting 4K Servers...</span>
-                </>
-              ) : (
-                <>
-                  <Zap size={18} />
-                  <span>Generate Direct Download Link</span>
-                </>
-              )}
-            </button>
-          </div>
-        )}
-
-        {/* STEP 2: Ad Step 1/2 */}
-        {step === 2 && (
-          <div style={{ textAlign: "center", padding: "0.5rem 0" }}>
-            <div style={{ marginBottom: "1rem", display: "inline-flex", alignItems: "center", gap: "0.4rem", background: "rgba(229,9,20,0.15)", color: "var(--primary)", padding: "0.4rem 1rem", borderRadius: "999px", fontSize: "0.85rem", fontWeight: 700 }}>
-              <Lock size={15} />
-              <span>Step 1 of 2: Unlock High-Speed Bandwidth</span>
-            </div>
-
-            <div
               style={{
-                background: "linear-gradient(135deg, rgba(245, 197, 24, 0.1) 0%, rgba(229, 9, 20, 0.1) 100%)",
-                border: "1px dashed rgba(245, 197, 24, 0.4)",
-                borderRadius: "var(--radius-md)",
-                padding: "1.25rem 1rem",
-                margin: "1rem 0",
-                textAlign: "left",
+                width: "100%",
+                padding: "0.9rem",
+                fontSize: "1rem",
+                fontWeight: 700,
+                borderRadius: "var(--radius-sm)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "0.5rem",
+                background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+                border: "none",
               }}
             >
-              <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                <div style={{ width: "42px", height: "42px", borderRadius: "8px", background: "var(--primary)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", flexShrink: 0 }}>
-                  <Gift size={22} />
-                </div>
-                <div>
-                  <h4 style={{ fontSize: "0.95rem", fontWeight: 700, color: "#fff" }}>
-                    Special Sponsor Offer
-                  </h4>
-                  <p style={{ fontSize: "0.78rem", color: "var(--text-secondary)", marginTop: "0.15rem" }}>
-                    Click below to open our sponsor offer in a new tab &amp; unlock your 4K download slot.
-                  </p>
-                </div>
+              <Download size={18} />
+              <span>{downloading ? "Preparing Legal File..." : `Download ${quality.toUpperCase()} File`}</span>
+            </button>
+          </div>
+        ) : (
+          <div>
+            <div
+              style={{
+                background: "rgba(239, 68, 68, 0.08)",
+                border: "1px solid rgba(239, 68, 68, 0.25)",
+                borderRadius: "var(--radius-sm)",
+                padding: "0.9rem",
+                display: "flex",
+                alignItems: "center",
+                gap: "0.75rem",
+                marginBottom: "1.5rem",
+                fontSize: "0.85rem",
+                color: "#fca5a5",
+              }}
+            >
+              <AlertCircle size={20} style={{ flexShrink: 0 }} />
+              <div>
+                <strong>Copyright Protected Content:</strong> FILMVORA is a legal discovery platform. Unauthorized downloads are not hosted. Please stream or rent this title legally via official providers below.
+              </div>
+            </div>
+
+            <div style={{ marginBottom: "1.5rem" }}>
+              <h4 style={{ fontSize: "0.95rem", color: "#fff", marginBottom: "0.75rem", fontWeight: 600 }}>
+                Available on Official Streaming & Rental Platforms:
+              </h4>
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+                {movie.officialSources && movie.officialSources.length > 0 ? (
+                  movie.officialSources.map((src, idx) => (
+                    <a
+                      key={idx}
+                      href={src.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        padding: "0.75rem 1rem",
+                        background: "rgba(255, 255, 255, 0.04)",
+                        border: "1px solid rgba(255, 255, 255, 0.08)",
+                        borderRadius: "var(--radius-sm)",
+                        color: "#fff",
+                        textDecoration: "none",
+                        transition: "all var(--transition-fast)",
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255, 255, 255, 0.08)")}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(255, 255, 255, 0.04)")}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                        {src.logoUrl && (
+                          <img
+                            src={src.logoUrl}
+                            alt={src.providerName}
+                            style={{ width: "28px", height: "28px", borderRadius: "4px", objectFit: "cover" }}
+                          />
+                        )}
+                        <div>
+                          <div style={{ fontWeight: 600, fontSize: "0.9rem" }}>{src.providerName}</div>
+                          <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
+                            {src.price || (src.type === "stream" ? "Subscription" : src.type === "rent" ? "Rent" : "Watch")}
+                          </div>
+                        </div>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", color: "var(--primary)", fontSize: "0.85rem", fontWeight: 600 }}>
+                        <span>Watch Now</span>
+                        <ExternalLink size={14} />
+                      </div>
+                    </a>
+                  ))
+                ) : (
+                  <div style={{ fontSize: "0.85rem", color: "var(--text-secondary)", textAlign: "center", padding: "1rem" }}>
+                    Availability information is currently being updated for this region.
+                  </div>
+                )}
               </div>
             </div>
 
             <button
-              onClick={handleAd1Click}
-              className="btn btn-primary"
-              style={{ width: "100%", padding: "0.85rem", fontSize: "0.95rem", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", background: "linear-gradient(135deg, #e50914, #ff5722)" }}
+              onClick={onClose}
+              className="btn btn-secondary"
+              style={{ width: "100%", padding: "0.8rem", borderRadius: "var(--radius-sm)", fontWeight: 600 }}
             >
-              <ExternalLink size={18} />
-              <span>{countdown > 0 ? `Visit Sponsor & Unlock (Wait ${countdown}s)` : "Click Here to Unlock Step 2"}</span>
+              Close Guide
             </button>
-          </div>
-        )}
-
-        {/* STEP 3: Ad Step 2/2 */}
-        {step === 3 && (
-          <div style={{ textAlign: "center", padding: "0.5rem 0" }}>
-            <div style={{ marginBottom: "1rem", display: "inline-flex", alignItems: "center", gap: "0.4rem", background: "rgba(0,210,255,0.15)", color: "#00d2ff", padding: "0.4rem 1rem", borderRadius: "999px", fontSize: "0.85rem", fontWeight: 700 }}>
-              <Zap size={15} />
-              <span>Step 2 of 2: Finalizing 4K Dedicated CDN Mirror</span>
-            </div>
-
-            <div
-              style={{
-                background: "rgba(16, 19, 26, 0.8)",
-                border: "1px solid var(--border-subtle)",
-                borderRadius: "var(--radius-md)",
-                padding: "1.25rem 1rem",
-                margin: "1rem 0",
-                textAlign: "left",
-              }}
-            >
-              <p style={{ fontSize: "0.85rem", color: "#fff", lineHeight: 1.5 }}>
-                ⚡ <strong>Allocated Mirror:</strong> Fast 10 Gbps Cloud Node<br/>
-                🎬 <strong>Format:</strong> {downloadDetails?.filename} ({downloadDetails?.fileSize})
-              </p>
-            </div>
-
-            <button
-              onClick={handleAd2Click}
-              className="btn btn-primary"
-              style={{ width: "100%", padding: "0.85rem", fontSize: "0.95rem", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", background: "linear-gradient(135deg, #10b981, #059669)" }}
-            >
-              <CheckCircle2 size={18} />
-              <span>{countdown > 0 ? `Finalizing Download (${countdown}s)...` : "Click to Get Final Download Link"}</span>
-            </button>
-          </div>
-        )}
-
-        {/* STEP 4: Download Link Ready! */}
-        {step === 4 && (
-          <div style={{ textAlign: "center", padding: "1rem 0" }}>
-            <div style={{ width: "64px", height: "64px", borderRadius: "50%", background: "rgba(16, 185, 129, 0.2)", color: "var(--accent-emerald)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 1rem" }}>
-              <CheckCircle2 size={36} />
-            </div>
-
-            <h3 style={{ fontSize: "1.25rem", fontWeight: 700, color: "#fff", marginBottom: "0.4rem" }}>
-              Download Link Unlocked!
-            </h3>
-            <p style={{ color: "var(--text-secondary)", fontSize: "0.85rem", marginBottom: "1.5rem" }}>
-              File: <strong>{downloadDetails?.filename}</strong> ({downloadDetails?.fileSize})<br/>
-              Audio: {downloadDetails?.audio}
-            </p>
-
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-              <button
-                onClick={handleFinalDownload}
-                className="btn btn-primary btn-lg"
-                style={{ width: "100%", padding: "0.85rem", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem" }}
-              >
-                <Download size={20} />
-                <span>Start Direct Download Now</span>
-              </button>
-
-              <a
-                href={`https://t.me/share/url?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent("Watch " + movie.title + " in 4K HD on Filmvora!")}`}
-                target="_blank"
-                rel="noreferrer"
-                className="btn btn-secondary"
-                style={{ width: "100%", padding: "0.75rem", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", color: "#38bdf8", borderColor: "rgba(56, 189, 248, 0.3)" }}
-              >
-                <Send size={16} />
-                <span>Share &amp; Save to Telegram</span>
-              </a>
-            </div>
           </div>
         )}
       </div>

@@ -11,6 +11,7 @@ import AdminLayout from "./components/admin/AdminLayout";
 // Public Pages
 import HomePage from "./pages/public/HomePage";
 import MoviesPage from "./pages/public/MoviesPage";
+import FreeStreamPage from "./pages/public/FreeStreamPage";
 import MovieDetailsPage from "./pages/public/MovieDetailsPage";
 import WatchPage from "./pages/public/WatchPage";
 import SearchResultsPage from "./pages/public/SearchResultsPage";
@@ -48,9 +49,14 @@ function App() {
 
       <div className="main-content">
         <Routes>
-          {/* Public Streaming Pages */}
+          {/* Public Discovery & Streaming Pages */}
           <Route path="/" element={<HomePage />} />
           <Route path="/movies" element={<MoviesPage />} />
+          <Route path="/series" element={<MoviesPage />} />
+          <Route path="/free-stream" element={<FreeStreamPage />} />
+          <Route path="/trending" element={<MoviesPage />} />
+          <Route path="/top-rated" element={<MoviesPage />} />
+          <Route path="/upcoming" element={<MoviesPage />} />
           <Route path="/movie/:id" element={<MovieDetailsPage />} />
           <Route path="/watch/:id" element={<WatchPage />} />
           <Route path="/search" element={<SearchResultsPage />} />

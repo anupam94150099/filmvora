@@ -1,10 +1,10 @@
-// Universal Global Movie & TV Shows Catalog Service (TMDB Integration)
-const TMDB_API_KEY = "4e44d9029b1270a757cddc766a1bcb63";
+// Universal Global Legal Movie & TV Shows Catalog Service (TMDB Integration)
+const TMDB_API_KEY = process.env.TMDB_API_KEY || "4e44d9029b1270a757cddc766a1bcb63";
 const TMDB_BASE_URL = "https://api.themoviedb.org/3";
 const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p";
 
 // Map TMDB genre IDs to human names
-const GENRE_MAP = {
+export const GENRE_MAP = {
   28: "Action",
   12: "Adventure",
   16: "Animation",
@@ -34,14 +34,12 @@ export const formatTmdbMovie = (tmdbItem) => {
 
   const id = tmdbItem.id;
   const title = tmdbItem.title || tmdbItem.name || tmdbItem.original_title || tmdbItem.original_name || "Untitled";
-  const releaseYear = tmdbItem.release_date
-    ? new Date(tmdbItem.release_date).getFullYear()
-    : tmdbItem.first_air_date
-    ? new Date(tmdbItem.first_air_date).getFullYear()
-    : new Date().getFullYear();
+  const originalTitle = tmdbItem.original_title || tmdbItem.original_name || title;
+  const releaseDate = tmdbItem.release_date || tmdbItem.first_air_date || "";
+  const releaseYear = releaseDate ? new Date(releaseDate).getFullYear() : new Date().getFullYear();
 
   const genres = Array.isArray(tmdbItem.genres)
-    ? tmdbItem.genres.map((g) => g.name)
+    ? tmdbItem.genres.map((g) => (typeof g === "string" ? g : g.name))
     : (tmdbItem.genre_ids || []).map((gid) => GENRE_MAP[gid]).filter(Boolean);
 
   const mainGenre = genres[0] || (tmdbItem.first_air_date ? "Web Series" : "Cinema");
@@ -54,61 +52,61 @@ export const formatTmdbMovie = (tmdbItem) => {
     ? `${TMDB_IMAGE_BASE}/original${tmdbItem.backdrop_path}`
     : posterUrl;
 
-  const rating = tmdbItem.vote_average ? Number(tmdbItem.vote_average.toFixed(1)) : 8.0;
+  const rating = tmdbItem.vote_average ? Number(tmdbItem.vote_average.toFixed(1)) : 7.8;
   const isTv = Boolean(tmdbItem.first_air_date || tmdbItem.name || tmdbItem.number_of_seasons);
 
-  const streamingMirrors = isTv
-    ? [
-        { name: "⚡ Server 1 (VidSrc Pro)", url: `https://vidsrc.to/embed/tv/${id}/1/1`, type: "embed" },
-        { name: "🎬 Server 2 (VidSrc XYZ)", url: `https://vidsrc.xyz/embed/tv?tmdb=${id}&season=1&episode=1`, type: "embed" },
-        { name: "🚀 Server 3 (MultiEmbed Fast)", url: `https://multiembed.mov/?video_id=${id}&tmdb=1&s=1&e=1`, type: "embed" },
-        { name: "🌐 Server 4 (EmbedSU VIP)", url: `https://embed.su/embed/tv/${id}/1/1`, type: "embed" },
-        { name: "⚡ Server 5 (VidLink 4K)", url: `https://vidlink.pro/tv/${id}/1/1`, type: "embed" },
-        { name: "🎥 Server 6 (2Embed VIP)", url: `https://www.2embed.cc/embedtv/${id}&s=1&e=1`, type: "embed" },
-        { name: "📼 Server 7 (Direct Mirror)", url: "https://archive.org/download/BigBuckBunny_124/Content/big_buck_bunny_720p_surround.mp4", type: "video" },
-      ]
-    : [
-        { name: "⚡ Server 1 (VidSrc Pro 4K)", url: `https://vidsrc.to/embed/movie/${id}`, type: "embed" },
-        { name: "🎬 Server 2 (VidSrc XYZ)", url: `https://vidsrc.xyz/embed/movie?tmdb=${id}`, type: "embed" },
-        { name: "🚀 Server 3 (MultiEmbed Fast)", url: `https://multiembed.mov/?video_id=${id}&tmdb=1`, type: "embed" },
-        { name: "🌐 Server 4 (EmbedSU VIP)", url: `https://embed.su/embed/movie/${id}`, type: "embed" },
-        { name: "⚡ Server 5 (VidLink 4K)", url: `https://vidlink.pro/movie/${id}`, type: "embed" },
-        { name: "🎥 Server 6 (2Embed VIP)", url: `https://www.2embed.cc/embed/${id}`, type: "embed" },
-        { name: "📼 Server 7 (Direct Mirror)", url: "https://archive.org/download/BigBuckBunny_124/Content/big_buck_bunny_720p_surround.mp4", type: "video" },
-      ];
+  // Map known TMDB watch provider logos and deep-links if available
+  const officialSources = [];
+  if (tmdbItem.watchProviders) {
+    officialSources.push(...tmdbItem.watchProviders);
+  }
 
   return {
     _id: `tmdb-${id}`,
-    tmdbId: id,
+    tmdbId: String(id),
     title,
+    originalTitle,
     slug: `tmdb-${id}`,
-    description: tmdbItem.overview || `Watch ${title} (${releaseYear}) in Ultra HD 4K on FILMVORA.`,
+    description: tmdbItem.overview || `Discover complete details, cast, official trailers, and where to legally watch ${title} (${releaseYear}) on FILMVORA.`,
+    poster: posterUrl,
     posterUrl,
+    backdrop: bannerUrl,
     bannerUrl,
-    trailerUrl: "https://archive.org/download/Tears-of-Steel/tears_of_steel_720p.mp4",
-    videoUrl: streamingMirrors[0].url,
-    streamingMirrors,
+    trailerUrl: tmdbItem.trailerUrl || "",
+    videoUrl: "",
+    watchUrl: "",
+    downloadUrl: "",
+    contentType: isTv ? "tv" : "movie",
+    availability: "EXTERNAL_STREAMING",
+    officialSources,
     releaseYear,
-    duration: tmdbItem.runtime ? `${tmdbItem.runtime} min` : isTv ? "Series (All Episodes)" : "125 min",
+    releaseDate,
+    duration: tmdbItem.runtime ? `${tmdbItem.runtime} min` : isTv ? "Series" : "120 min",
+    runtime: tmdbItem.runtime || 120,
     rating,
     ageRating: tmdbItem.adult ? "18+" : "13+",
     quality: "4K Ultra HD",
     genre: mainGenre,
     genres: genres.length > 0 ? genres : [mainGenre],
     language: tmdbItem.original_language ? tmdbItem.original_language.toUpperCase() : "EN",
-    director: "Acclaimed Director",
-    cast: ["Star Cast", "Featured Actors"],
-    tags: [mainGenre, releaseYear.toString(), "4K", isTv ? "TV Series" : "Movie", "Global"],
-    views: Math.floor((tmdbItem.popularity || 50) * 120),
-    isFeatured: (tmdbItem.vote_average || 0) >= 7.8,
-    isTrending: (tmdbItem.popularity || 0) > 30,
+    languages: tmdbItem.spoken_languages ? tmdbItem.spoken_languages.map((l) => l.english_name || l.name) : ["English"],
+    country: tmdbItem.origin_country && tmdbItem.origin_country[0] ? tmdbItem.origin_country[0] : tmdbItem.production_countries && tmdbItem.production_countries[0] ? tmdbItem.production_countries[0].name : "Global",
+    director: tmdbItem.director || "Acclaimed Director",
+    cast: Array.isArray(tmdbItem.cast) ? tmdbItem.cast : ["Star Cast", "Featured Cast"],
+    castDetails: tmdbItem.castDetails || [],
+    productionCompanies: tmdbItem.production_companies ? tmdbItem.production_companies.map((p) => p.name) : [],
+    tags: [mainGenre, releaseYear.toString(), isTv ? "TV Series" : "Movie", "Legal Stream", "Discovery"],
+    views: Math.floor((tmdbItem.popularity || 50) * 85),
+    isFeatured: (tmdbItem.vote_average || 0) >= 7.6 && (tmdbItem.popularity || 0) > 20,
+    isTrending: (tmdbItem.popularity || 0) > 25,
     isPublished: true,
     isGlobal: true,
     isTv,
-    createdAt: tmdbItem.release_date || tmdbItem.first_air_date || new Date().toISOString(),
+    createdAt: releaseDate || new Date().toISOString(),
   };
 };
 
+// Generate phonetic / spelling search variants
 const generateSearchVariants = (q) => {
   const clean = q.trim().toLowerCase();
   const variants = new Set([clean]);
@@ -122,7 +120,6 @@ const generateSearchVariants = (q) => {
   if (clean.endsWith("wa")) {
     variants.add(clean.replace(/wa$/, "waan"));
     variants.add(clean.replace(/wa$/, "wan"));
-    variants.add(clean.replace(/wa$/, "avaan"));
   }
   if (clean.endsWith("an")) variants.add(clean.replace(/an$/, "aan"));
   if (clean.endsWith("aan")) variants.add(clean.replace(/aan$/, "an"));
@@ -137,22 +134,17 @@ const generateSearchVariants = (q) => {
   variants.add(clean.replace(/i/g, "ee"));
   variants.add(clean.replace(/oo/g, "u"));
   variants.add(clean.replace(/u/g, "oo"));
-  variants.add(clean.replace(/aa/g, "a"));
-  variants.add(clean.replace(/a/g, "aa"));
   variants.add(clean.replace(/bahu/g, "baahu"));
-  variants.add(clean.replace(/ch/g, "chh"));
-  variants.add(clean.replace(/chh/g, "ch"));
-  variants.add(clean.replace(/kfg/g, "kgf"));
   variants.add(clean.replace(/kgf/g, "k.g.f"));
+  variants.add(clean.replace(/kfg/g, "kgf"));
   variants.add(clean.replace(/sh/g, "s"));
   variants.add(clean.replace(/ph/g, "f"));
   variants.add(clean.replace(/f/g, "ph"));
-  variants.add(clean.replace(/z/g, "j"));
-  variants.add(clean.replace(/j/g, "z"));
 
   return Array.from(variants);
 };
 
+// Search TMDB across Movies, TV Shows, and People
 export const searchTmdb = async (query, page = 1) => {
   if (!query || !query.trim()) return [];
 
@@ -161,16 +153,16 @@ export const searchTmdb = async (query, page = 1) => {
 
   try {
     const fetchPromises = [];
-    for (const v of variants.slice(0, 5)) {
+    for (const v of variants.slice(0, 4)) {
       const q = encodeURIComponent(v);
       fetchPromises.push(
+        fetch(`${TMDB_BASE_URL}/search/multi?api_key=${TMDB_API_KEY}&query=${q}&page=${page}&include_adult=false`)
+          .then((r) => (r.ok ? r.json() : { results: [] }))
+          .catch(() => ({ results: [] })),
         fetch(`${TMDB_BASE_URL}/search/movie?api_key=${TMDB_API_KEY}&query=${q}&page=${page}&include_adult=false`)
           .then((r) => (r.ok ? r.json() : { results: [] }))
           .catch(() => ({ results: [] })),
         fetch(`${TMDB_BASE_URL}/search/tv?api_key=${TMDB_API_KEY}&query=${q}&page=${page}&include_adult=false`)
-          .then((r) => (r.ok ? r.json() : { results: [] }))
-          .catch(() => ({ results: [] })),
-        fetch(`${TMDB_BASE_URL}/search/multi?api_key=${TMDB_API_KEY}&query=${q}&page=${page}&include_adult=false`)
           .then((r) => (r.ok ? r.json() : { results: [] }))
           .catch(() => ({ results: [] }))
       );
@@ -225,26 +217,53 @@ export const searchTmdb = async (query, page = 1) => {
       return (b.popularity || 0) - (a.popularity || 0);
     });
 
-    return uniqueRaw.map(formatTmdbMovie).filter(Boolean);
+    return uniqueRaw.slice(0, 30).map(formatTmdbMovie).filter(Boolean);
   } catch (err) {
     console.error("[TMDB Service] Search error:", err.message);
     return [];
   }
 };
 
+// Fast Autocomplete Suggestions for live search dropdown
+export const autocompleteTmdb = async (query) => {
+  if (!query || !query.trim() || query.trim().length < 2) return [];
+  const q = encodeURIComponent(query.trim());
+  try {
+    const res = await fetch(`${TMDB_BASE_URL}/search/multi?api_key=${TMDB_API_KEY}&query=${q}&page=1&include_adult=false`);
+    if (!res.ok) return [];
+    const data = await res.json();
+    const results = (data.results || [])
+      .filter((item) => (item.title || item.name) && (item.poster_path || item.backdrop_path))
+      .slice(0, 8)
+      .map(formatTmdbMovie);
+    return results;
+  } catch (err) {
+    return [];
+  }
+};
+
+// Deep Details Fetcher with Watch Providers, Official Trailers, Cast avatars & Recommendations
 export const getTmdbDetails = async (tmdbId) => {
   if (!tmdbId) return null;
 
   try {
     const cleanId = String(tmdbId).replace(/^tmdb-/, "");
     
-    let res = await fetch(`${TMDB_BASE_URL}/movie/${cleanId}?api_key=${TMDB_API_KEY}&append_to_response=credits,videos,recommendations`);
+    // Attempt movie lookup first
+    let isTv = false;
+    let res = await fetch(
+      `${TMDB_BASE_URL}/movie/${cleanId}?api_key=${TMDB_API_KEY}&append_to_response=credits,videos,recommendations,similar,watch/providers`
+    );
     let data = null;
 
     if (res.ok) {
       data = await res.json();
     } else {
-      res = await fetch(`${TMDB_BASE_URL}/tv/${cleanId}?api_key=${TMDB_API_KEY}&append_to_response=credits,videos,recommendations`);
+      // Fallback to TV show lookup
+      isTv = true;
+      res = await fetch(
+        `${TMDB_BASE_URL}/tv/${cleanId}?api_key=${TMDB_API_KEY}&append_to_response=credits,videos,recommendations,similar,watch/providers`
+      );
       if (res.ok) {
         data = await res.json();
       }
@@ -254,9 +273,17 @@ export const getTmdbDetails = async (tmdbId) => {
 
     const movie = formatTmdbMovie(data);
 
+    // 1. Process Credits (Cast & Director)
     if (data.credits) {
       if (Array.isArray(data.credits.cast)) {
-        movie.cast = data.credits.cast.slice(0, 10).map((c) => c.name);
+        movie.cast = data.credits.cast.slice(0, 12).map((c) => c.name);
+        movie.castDetails = data.credits.cast.slice(0, 12).map((c) => ({
+          name: c.name,
+          character: c.character || "Cast",
+          profileUrl: c.profile_path
+            ? `${TMDB_IMAGE_BASE}/w185${c.profile_path}`
+            : "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&q=80",
+        }));
       }
       if (Array.isArray(data.credits.crew)) {
         const directorObj = data.credits.crew.find((c) => c.job === "Director");
@@ -268,18 +295,104 @@ export const getTmdbDetails = async (tmdbId) => {
       movie.director = data.created_by.map((c) => c.name).join(", ");
     }
 
+    // 2. Process Official YouTube Trailer
     if (data.videos && Array.isArray(data.videos.results)) {
       const trailer = data.videos.results.find(
-        (v) => (v.type === "Trailer" || v.type === "Teaser") && v.site === "YouTube"
+        (v) => (v.type === "Trailer" || v.type === "Teaser" || v.type === "Clip") && v.site === "YouTube"
       );
       if (trailer && trailer.key) {
-        movie.trailerEmbed = `https://www.youtube-nocookie.com/embed/${trailer.key}?autoplay=1`;
+        movie.trailerUrl = `https://www.youtube.com/watch?v=${trailer.key}`;
+        movie.trailerEmbed = `https://www.youtube-nocookie.com/embed/${trailer.key}?autoplay=1&modestbranding=1&rel=0`;
       }
     }
 
-    if (data.recommendations && Array.isArray(data.recommendations.results)) {
-      movie.related = data.recommendations.results.slice(0, 8).map(formatTmdbMovie);
+    // 3. Process Official Watch Providers (India IN, US, and Global)
+    const officialSources = [];
+    const wpData = data["watch/providers"]?.results;
+    if (wpData) {
+      const regionData = wpData.IN || wpData.US || wpData.GB || Object.values(wpData)[0];
+      if (regionData) {
+        // Stream / Flatrate
+        if (Array.isArray(regionData.flatrate)) {
+          for (const p of regionData.flatrate) {
+            officialSources.push({
+              providerName: p.provider_name,
+              logoUrl: `${TMDB_IMAGE_BASE}/w92${p.logo_path}`,
+              type: "stream",
+              url: regionData.link || `https://www.themoviedb.org/${isTv ? "tv" : "movie"}/${cleanId}/watch`,
+              price: "Subscription",
+            });
+          }
+        }
+        // Rent
+        if (Array.isArray(regionData.rent)) {
+          for (const p of regionData.rent) {
+            officialSources.push({
+              providerName: p.provider_name,
+              logoUrl: `${TMDB_IMAGE_BASE}/w92${p.logo_path}`,
+              type: "rent",
+              url: regionData.link || `https://www.themoviedb.org/${isTv ? "tv" : "movie"}/${cleanId}/watch`,
+              price: "Rent / PPV",
+            });
+          }
+        }
+        // Buy
+        if (Array.isArray(regionData.buy)) {
+          for (const p of regionData.buy) {
+            officialSources.push({
+              providerName: p.provider_name,
+              logoUrl: `${TMDB_IMAGE_BASE}/w92${p.logo_path}`,
+              type: "buy",
+              url: regionData.link || `https://www.themoviedb.org/${isTv ? "tv" : "movie"}/${cleanId}/watch`,
+              price: "Purchase",
+            });
+          }
+        }
+        // Free / Ad-Supported
+        if (Array.isArray(regionData.free) || Array.isArray(regionData.ads)) {
+          const freeList = regionData.free || regionData.ads || [];
+          for (const p of freeList) {
+            officialSources.push({
+              providerName: p.provider_name,
+              logoUrl: `${TMDB_IMAGE_BASE}/w92${p.logo_path}`,
+              type: "free",
+              url: regionData.link || `https://www.themoviedb.org/${isTv ? "tv" : "movie"}/${cleanId}/watch`,
+              price: "Free with Ads",
+            });
+          }
+        }
+      }
     }
+
+    // If no provider returned, provide fallback legal discovery hub
+    if (officialSources.length === 0) {
+      officialSources.push({
+        providerName: "Check Theatrical / OTT Availability",
+        logoUrl: "https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?w=100&q=80",
+        type: "stream",
+        url: `https://www.themoviedb.org/${isTv ? "tv" : "movie"}/${cleanId}/watch`,
+        price: "Official Info",
+      });
+    }
+    movie.officialSources = officialSources;
+
+    // 4. Recommendations & Similar
+    const relatedList = [];
+    if (data.recommendations && Array.isArray(data.recommendations.results)) {
+      relatedList.push(...data.recommendations.results);
+    }
+    if (data.similar && Array.isArray(data.similar.results)) {
+      relatedList.push(...data.similar.results);
+    }
+    const seenRelated = new Set();
+    movie.related = relatedList
+      .filter((r) => {
+        if (!r || !r.id || seenRelated.has(r.id) || r.id === Number(cleanId)) return false;
+        seenRelated.add(r.id);
+        return true;
+      })
+      .slice(0, 10)
+      .map(formatTmdbMovie);
 
     return movie;
   } catch (err) {
@@ -287,3 +400,35 @@ export const getTmdbDetails = async (tmdbId) => {
     return null;
   }
 };
+
+// Discovery Endpoints for Categorized Homepage & Explore Rows
+const fetchDiscover = async (endpoint, params = {}) => {
+  try {
+    const queryParams = new URLSearchParams({
+      api_key: TMDB_API_KEY,
+      include_adult: "false",
+      page: params.page || 1,
+      ...params,
+    });
+    const res = await fetch(`${TMDB_BASE_URL}/${endpoint}?${queryParams}`);
+    if (!res.ok) return [];
+    const data = await res.json();
+    return (data.results || []).map(formatTmdbMovie).filter(Boolean);
+  } catch (err) {
+    console.error(`[TMDB Discover] ${endpoint} error:`, err.message);
+    return [];
+  }
+};
+
+export const getTmdbTrending = (page = 1) => fetchDiscover("trending/all/week", { page });
+export const getTmdbPopular = (page = 1) => fetchDiscover("movie/popular", { page });
+export const getTmdbTopRated = (page = 1) => fetchDiscover("movie/top_rated", { page });
+export const getTmdbUpcoming = (page = 1) => fetchDiscover("movie/upcoming", { page });
+export const getTmdbBollywood = (page = 1) => fetchDiscover("discover/movie", { with_original_language: "hi", sort_by: "popularity.desc", page });
+export const getTmdbHollywood = (page = 1) => fetchDiscover("discover/movie", { with_original_language: "en", sort_by: "popularity.desc", page });
+export const getTmdbSouthIndian = (page = 1) => fetchDiscover("discover/movie", { with_original_language: "te|ta|ml|kn", sort_by: "popularity.desc", page });
+export const getTmdbKorean = (page = 1) => fetchDiscover("discover/movie", { with_original_language: "ko", sort_by: "popularity.desc", page });
+export const getTmdbAnime = (page = 1) => fetchDiscover("discover/movie", { with_genres: "16", with_original_language: "ja", sort_by: "popularity.desc", page });
+export const getTmdbWebSeries = (page = 1) => fetchDiscover("tv/popular", { page });
+export const getTmdbByGenre = (genreId, page = 1) => fetchDiscover("discover/movie", { with_genres: String(genreId), sort_by: "popularity.desc", page });
+

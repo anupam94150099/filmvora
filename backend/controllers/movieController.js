@@ -3,11 +3,26 @@ import Movie from "../models/Movie.js";
 import Review from "../models/Review.js";
 import slugify from "../utils/slugify.js";
 import { inMemoryStore } from "../utils/mockStore.js";
-import { searchTmdb, getTmdbDetails } from "../services/tmdbService.js";
+import {
+  searchTmdb,
+  autocompleteTmdb,
+  getTmdbDetails,
+  getTmdbTrending,
+  getTmdbPopular,
+  getTmdbTopRated,
+  getTmdbUpcoming,
+  getTmdbBollywood,
+  getTmdbHollywood,
+  getTmdbSouthIndian,
+  getTmdbKorean,
+  getTmdbAnime,
+  getTmdbWebSeries,
+  getTmdbByGenre,
+} from "../services/tmdbService.js";
 
 const isDbConnected = () => mongoose.connection.readyState === 1;
 
-// @desc    Fast instant autocomplete search across local and TMDB global movies
+// @desc    Instant search & autocomplete suggestions
 // @route   GET /api/movies/instant-search?q=...
 // @access  Public
 export const instantSearch = async (req, res, next) => {
@@ -19,13 +34,19 @@ export const instantSearch = async (req, res, next) => {
 
     const query = q.trim().toLowerCase();
 
-    // 1. Search local store
-    let localMatches = inMemoryStore.movies
-      .filter((m) => m.isPublished && (m.title.toLowerCase().includes(query) || (m.tags && m.tags.some(t => t.toLowerCase().includes(query)))))
+    // 1. Search local curated store
+    const localMatches = inMemoryStore.movies
+      .filter(
+        (m) =>
+          m.isPublished &&
+          (m.title.toLowerCase().includes(query) ||
+            (m.originalTitle && m.originalTitle.toLowerCase().includes(query)) ||
+            (m.tags && m.tags.some((t) => t.toLowerCase().includes(query))))
+      )
       .slice(0, 4);
 
-    // 2. Search TMDB global catalog
-    const tmdbMatches = await searchTmdb(query, 1);
+    // 2. Search TMDB Autocomplete
+    const tmdbMatches = await autocompleteTmdb(query);
 
     const seen = new Set();
     const results = [];
@@ -36,12 +57,15 @@ export const instantSearch = async (req, res, next) => {
         seen.add(key);
         results.push({
           _id: m._id,
+          tmdbId: m.tmdbId || "",
           title: m.title,
           slug: m.slug || m._id,
-          posterUrl: m.posterUrl,
+          posterUrl: m.posterUrl || m.poster,
           releaseYear: m.releaseYear,
           rating: m.rating,
           genre: m.genre || (m.genres && m.genres[0]) || "Movie",
+          language: m.language,
+          availability: m.availability || "PUBLIC_DOMAIN",
           isGlobal: false,
         });
       }
@@ -53,12 +77,15 @@ export const instantSearch = async (req, res, next) => {
         seen.add(key);
         results.push({
           _id: m._id,
+          tmdbId: m.tmdbId,
           title: m.title,
           slug: m.slug,
-          posterUrl: m.posterUrl,
+          posterUrl: m.posterUrl || m.poster,
           releaseYear: m.releaseYear,
           rating: m.rating,
           genre: m.genre,
+          language: m.language,
+          availability: m.availability || "EXTERNAL_STREAMING",
           isGlobal: true,
         });
       }
@@ -73,7 +100,7 @@ export const instantSearch = async (req, res, next) => {
   }
 };
 
-// @desc    Get all movies with filtering, search, sorting & pagination
+// @desc    Get all movies with multi-attribute filtering & search
 // @route   GET /api/movies
 // @access  Public
 export const getMovies = async (req, res, next) => {
@@ -83,11 +110,13 @@ export const getMovies = async (req, res, next) => {
       genre,
       year,
       language,
+      country,
       minRating,
-      sort,
+      availability,
+      contentType,
+      sort = "popularity",
       featured,
       trending,
-      isPublished,
       page = 1,
       limit = 12,
     } = req.query;
@@ -95,177 +124,141 @@ export const getMovies = async (req, res, next) => {
     const pageNum = parseInt(page, 10);
     const limitNum = parseInt(limit, 10);
 
-    // If search is requested, query both local DB and TMDB global movies
+    // If text search is requested, query both local store and TMDB
     if (search && search.trim()) {
       const s = search.trim().toLowerCase();
-      let localMatches = [];
 
-      if (isDbConnected()) {
-        try {
-          localMatches = await Movie.find({
-            isPublished: isPublished !== "false",
-            $or: [
-              { title: { $regex: s, $options: "i" } },
-              { description: { $regex: s, $options: "i" } },
-              { director: { $regex: s, $options: "i" } },
-              { cast: { $regex: s, $options: "i" } },
-              { tags: { $regex: s, $options: "i" } },
-            ],
-          });
-        } catch (dbErr) {}
-      }
+      // Search local database / memory store
+      const localMatches = inMemoryStore.movies.filter((m) => {
+        if (!m.isPublished) return false;
+        const matchTitle = m.title.toLowerCase().includes(s);
+        const matchDirector = m.director && m.director.toLowerCase().includes(s);
+        const matchCast = m.cast && m.cast.some((c) => c.toLowerCase().includes(s));
+        const matchGenre = m.genre && m.genre.toLowerCase().includes(s);
+        const matchTags = m.tags && m.tags.some((t) => t.toLowerCase().includes(s));
+        return matchTitle || matchDirector || matchCast || matchGenre || matchTags;
+      });
 
-      if (localMatches.length === 0) {
-        localMatches = inMemoryStore.movies.filter(
-          (m) =>
-            m.title.toLowerCase().includes(s) ||
-            m.description.toLowerCase().includes(s) ||
-            (m.director && m.director.toLowerCase().includes(s)) ||
-            (m.cast && m.cast.some((c) => c.toLowerCase().includes(s)))
-        );
-      }
-
-      // Fetch global TMDB results
-      const tmdbResults = await searchTmdb(s, pageNum);
+      // Search TMDB
+      const tmdbMatches = await searchTmdb(s, pageNum);
 
       // Merge and deduplicate
       const seenTitles = new Set();
       const combined = [];
 
       for (const m of localMatches) {
-        const titleKey = m.title.toLowerCase().trim();
-        if (!seenTitles.has(titleKey)) {
-          seenTitles.add(titleKey);
+        seenTitles.add(m.title.toLowerCase().trim());
+        combined.push(m);
+      }
+
+      for (const m of tmdbMatches) {
+        const key = m.title.toLowerCase().trim();
+        if (!seenTitles.has(key)) {
+          seenTitles.add(key);
           combined.push(m);
         }
       }
 
-      for (const m of tmdbResults) {
-        const titleKey = m.title.toLowerCase().trim();
-        if (!seenTitles.has(titleKey)) {
-          seenTitles.add(titleKey);
-          combined.push(m);
-        }
+      // Apply in-memory secondary filters if provided
+      let filtered = combined;
+      if (genre && genre !== "All") {
+        filtered = filtered.filter(
+          (m) =>
+            (m.genre && m.genre.toLowerCase() === genre.toLowerCase()) ||
+            (m.genres && m.genres.some((g) => g.toLowerCase() === genre.toLowerCase()))
+        );
+      }
+      if (year && year !== "All") {
+        filtered = filtered.filter((m) => m.releaseYear === Number(year));
+      }
+      if (language && language !== "All") {
+        filtered = filtered.filter(
+          (m) =>
+            (m.language && m.language.toLowerCase() === language.toLowerCase()) ||
+            (m.languages && m.languages.some((l) => l.toLowerCase() === language.toLowerCase()))
+        );
+      }
+      if (availability && availability !== "All") {
+        filtered = filtered.filter((m) => m.availability === availability);
+      }
+      if (contentType && contentType !== "All") {
+        filtered = filtered.filter((m) => m.contentType === contentType);
+      }
+      if (minRating) {
+        filtered = filtered.filter((m) => m.rating >= Number(minRating));
       }
 
-      const total = combined.length;
-      const skip = (pageNum - 1) * limitNum;
-      const paginated = combined.slice(skip, skip + limitNum);
+      const total = filtered.length;
+      const startIndex = (pageNum - 1) * limitNum;
+      const paginated = filtered.slice(startIndex, startIndex + limitNum);
 
       return res.json({
         success: true,
         count: paginated.length,
         total,
+        page: pageNum,
         totalPages: Math.ceil(total / limitNum) || 1,
-        currentPage: pageNum,
         movies: paginated,
       });
     }
 
-    if (isDbConnected()) {
-      try {
-        const query = {};
-        if (isPublished !== undefined) {
-          query.isPublished = isPublished === "true";
-        } else {
-          query.isPublished = true;
-        }
-
-        if (genre && genre !== "All") {
-          query.$or = [
-            { genre: { $regex: new RegExp(`^${genre}$`, "i") } },
-            { genres: { $in: [new RegExp(`^${genre}$`, "i")] } },
-          ];
-        }
-
-        if (year && year !== "All") query.releaseYear = Number(year);
-        if (language && language !== "All") query.language = { $regex: new RegExp(`^${language}$`, "i") };
-        if (minRating) query.rating = { $gte: Number(minRating) };
-        if (featured !== undefined) query.isFeatured = featured === "true";
-        if (trending !== undefined) query.isTrending = trending === "true";
-
-        let sortOption = { createdAt: -1 };
-        if (sort === "popular" || sort === "views") sortOption = { views: -1 };
-        else if (sort === "topRated" || sort === "rating") sortOption = { rating: -1 };
-        else if (sort === "year") sortOption = { releaseYear: -1 };
-        else if (sort === "title") sortOption = { title: 1 };
-
-        const skip = (pageNum - 1) * limitNum;
-
-        const total = await Movie.countDocuments(query);
-        if (total > 0) {
-          const movies = await Movie.find(query).sort(sortOption).skip(skip).limit(limitNum);
-          return res.json({
-            success: true,
-            count: movies.length,
-            total,
-            totalPages: Math.ceil(total / limitNum) || 1,
-            currentPage: pageNum,
-            movies,
-          });
-        }
-      } catch (dbErr) {
-        console.warn("[MovieController] Mongo query fallback:", dbErr.message);
-      }
-    }
-
-    // Fallback in-memory query
-    let filtered = [...inMemoryStore.movies];
-
-    if (isPublished !== undefined) {
-      const pub = isPublished === "true";
-      filtered = filtered.filter((m) => m.isPublished === pub);
-    }
+    // Standard catalog listing without search query
+    let list = [...inMemoryStore.movies];
 
     if (genre && genre !== "All") {
-      filtered = filtered.filter(
+      list = list.filter(
         (m) =>
-          m.genre.toLowerCase() === genre.toLowerCase() ||
+          (m.genre && m.genre.toLowerCase() === genre.toLowerCase()) ||
           (m.genres && m.genres.some((g) => g.toLowerCase() === genre.toLowerCase()))
       );
     }
-
     if (year && year !== "All") {
-      filtered = filtered.filter((m) => m.releaseYear === Number(year));
+      list = list.filter((m) => m.releaseYear === Number(year));
     }
-
     if (language && language !== "All") {
-      filtered = filtered.filter((m) => m.language.toLowerCase() === language.toLowerCase());
+      list = list.filter(
+        (m) =>
+          (m.language && m.language.toLowerCase() === language.toLowerCase()) ||
+          (m.languages && m.languages.some((l) => l.toLowerCase() === language.toLowerCase()))
+      );
     }
-
+    if (availability && availability !== "All") {
+      list = list.filter((m) => m.availability === availability);
+    }
+    if (contentType && contentType !== "All") {
+      list = list.filter((m) => m.contentType === contentType);
+    }
     if (minRating) {
-      filtered = filtered.filter((m) => m.rating >= Number(minRating));
+      list = list.filter((m) => m.rating >= Number(minRating));
+    }
+    if (featured === "true") {
+      list = list.filter((m) => m.isFeatured);
+    }
+    if (trending === "true") {
+      list = list.filter((m) => m.isTrending);
     }
 
-    if (featured !== undefined) {
-      const feat = featured === "true";
-      filtered = filtered.filter((m) => m.isFeatured === feat);
-    }
-
-    if (trending !== undefined) {
-      const trend = trending === "true";
-      filtered = filtered.filter((m) => m.isTrending === trend);
-    }
-
-    if (sort === "popular" || sort === "views") {
-      filtered.sort((a, b) => b.views - a.views);
-    } else if (sort === "topRated" || sort === "rating") {
-      filtered.sort((a, b) => b.rating - a.rating);
-    } else if (sort === "year") {
-      filtered.sort((a, b) => b.releaseYear - a.releaseYear);
+    // Sort
+    if (sort === "rating") {
+      list.sort((a, b) => b.rating - a.rating);
+    } else if (sort === "releaseDate" || sort === "year") {
+      list.sort((a, b) => b.releaseYear - a.releaseYear);
     } else if (sort === "title") {
-      filtered.sort((a, b) => a.title.localeCompare(b.title));
+      list.sort((a, b) => a.title.localeCompare(b.title));
+    } else {
+      list.sort((a, b) => (b.views || 0) - (a.views || 0));
     }
 
-    const skip = (pageNum - 1) * limitNum;
-    const paginated = filtered.slice(skip, skip + limitNum);
+    const total = list.length;
+    const startIndex = (pageNum - 1) * limitNum;
+    const paginated = list.slice(startIndex, startIndex + limitNum);
 
     res.json({
       success: true,
       count: paginated.length,
-      total: filtered.length,
-      totalPages: Math.ceil(filtered.length / limitNum) || 1,
-      currentPage: pageNum,
+      total,
+      page: pageNum,
+      totalPages: Math.ceil(total / limitNum) || 1,
       movies: paginated,
     });
   } catch (error) {
@@ -273,159 +266,160 @@ export const getMovies = async (req, res, next) => {
   }
 };
 
-// @desc    Get single movie by ID or Slug (Local or TMDB Global)
-// @route   GET /api/movies/:idOrSlug
+// @desc    Get single movie by ID or slug
+// @route   GET /api/movies/:id
 // @access  Public
 export const getMovie = async (req, res, next) => {
   try {
     const { id } = req.params;
 
-    // 1. Check if it's a global TMDB movie ID
-    if (String(id).startsWith("tmdb-") || (!isNaN(id) && Number(id) > 1000)) {
+    // 1. Check if it is a TMDB ID
+    if (id.startsWith("tmdb-")) {
       const tmdbMovie = await getTmdbDetails(id);
       if (tmdbMovie) {
-        return res.json({
-          success: true,
-          movie: tmdbMovie,
-          related: tmdbMovie.related || inMemoryStore.movies.slice(0, 6),
-        });
+        return res.json({ success: true, movie: tmdbMovie });
       }
     }
 
-    if (isDbConnected()) {
-      try {
-        let movie;
-        if (id.match(/^[0-9a-fA-F]{24}$/)) {
-          movie = await Movie.findById(id);
-        } else {
-          movie = await Movie.findOne({ slug: id });
-        }
-
-        if (movie) {
-          movie.views = (movie.views || 0) + 1;
-          await movie.save();
-
-          const related = await Movie.find({
-            _id: { $ne: movie._id },
-            isPublished: true,
-            genre: movie.genre,
-          }).limit(6);
-
-          return res.json({
-            success: true,
-            movie,
-            related,
-          });
-        }
-      } catch (err) {}
-    }
-
-    let movie = inMemoryStore.movies.find(
-      (m) => m._id.toString() === id || m.slug === id
+    // 2. Check local database / mockStore
+    const local = inMemoryStore.movies.find(
+      (m) => m._id.toString() === id || m.slug === id || (m.tmdbId && m.tmdbId === id)
     );
-
-    if (!movie) {
-      // Fallback: Try fetching from TMDB in case slug matches
-      const tmdbMovie = await getTmdbDetails(id);
-      if (tmdbMovie) {
-        return res.json({
-          success: true,
-          movie: tmdbMovie,
-          related: tmdbMovie.related || inMemoryStore.movies.slice(0, 6),
-        });
-      }
-
-      return res.status(404).json({
-        success: false,
-        message: "Movie not found",
-      });
+    if (local) {
+      local.views = (local.views || 0) + 1;
+      return res.json({ success: true, movie: local });
     }
 
-    movie.views = (movie.views || 0) + 1;
+    // 3. Fallback: try fetching as TMDB ID directly
+    const fallbackTmdb = await getTmdbDetails(id);
+    if (fallbackTmdb) {
+      return res.json({ success: true, movie: fallbackTmdb });
+    }
 
-    const related = inMemoryStore.movies
-      .filter((m) => m._id.toString() !== movie._id.toString() && m.genre === movie.genre)
-      .slice(0, 6);
+    res.status(404).json({ success: false, message: "No movie found with this ID or slug." });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Get curated homepage & discovery category rows
+// @route   GET /api/movies/categories/:category
+// @access  Public
+export const getCategoryMovies = async (req, res, next) => {
+  try {
+    const { category } = req.params;
+    const page = parseInt(req.query.page || 1, 10);
+
+    let movies = [];
+
+    switch (category) {
+      case "trending":
+        movies = await getTmdbTrending(page);
+        break;
+      case "popular":
+        movies = await getTmdbPopular(page);
+        break;
+      case "top-rated":
+        movies = await getTmdbTopRated(page);
+        break;
+      case "upcoming":
+        movies = await getTmdbUpcoming(page);
+        break;
+      case "bollywood":
+        movies = await getTmdbBollywood(page);
+        break;
+      case "hollywood":
+        movies = await getTmdbHollywood(page);
+        break;
+      case "south-indian":
+        movies = await getTmdbSouthIndian(page);
+        break;
+      case "korean":
+        movies = await getTmdbKorean(page);
+        break;
+      case "anime":
+        movies = await getTmdbAnime(page);
+        break;
+      case "web-series":
+        movies = await getTmdbWebSeries(page);
+        break;
+      case "free-stream":
+        movies = inMemoryStore.movies.filter(
+          (m) => m.availability === "PUBLIC_DOMAIN" || m.availability === "CREATIVE_COMMONS" || m.availability === "LICENSED"
+        );
+        break;
+      default:
+        // Try genre lookup
+        const genreId = Number(category);
+        if (!isNaN(genreId)) {
+          movies = await getTmdbByGenre(genreId, page);
+        } else {
+          movies = inMemoryStore.movies.slice(0, 10);
+        }
+        break;
+    }
 
     res.json({
       success: true,
-      movie,
-      related,
+      category,
+      count: movies.length,
+      movies,
     });
   } catch (error) {
     next(error);
   }
 };
 
+// @desc    Request safe legal download
+// @route   POST /api/movies/:id/download
+// @access  Public
 export const requestDownload = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { quality = "1080p", audio = "original" } = req.body;
+    const { quality = "1080p" } = req.body;
 
-    let movie = inMemoryStore.movies.find(
-      (m) => m._id.toString() === id || m.slug === id
+    let targetMovie = inMemoryStore.movies.find(
+      (m) => m._id.toString() === id || m.slug === id || m.tmdbId === id
     );
 
-    if (isDbConnected()) {
-      try {
-        const dbMovie = (await Movie.findById(id)) || (await Movie.findOne({ slug: id }));
-        if (dbMovie) movie = dbMovie;
-      } catch (err) {}
+    if (!targetMovie && id.startsWith("tmdb-")) {
+      targetMovie = await getTmdbDetails(id);
     }
 
-    if (!movie) {
-      movie = await getTmdbDetails(id);
+    if (!targetMovie) {
+      return res.status(404).json({ success: false, message: "No movie found." });
     }
 
-    if (!movie) {
-      return res.status(404).json({ success: false, message: "Movie not found" });
+    // Strict Legal Check: Only allow download if movie has a legitimate downloadUrl or is Public Domain / Creative Commons
+    const isLegalDownload =
+      targetMovie.availability === "PUBLIC_DOMAIN" ||
+      targetMovie.availability === "CREATIVE_COMMONS" ||
+      targetMovie.availability === "LICENSED" ||
+      targetMovie.availability === "OWNED";
+
+    if (!isLegalDownload || !targetMovie.downloadUrl) {
+      return res.status(403).json({
+        success: false,
+        isExternal: true,
+        message:
+          "This title is copyrighted and protected. Unauthorized downloads are not permitted. Please use the official Where to Watch streaming/rental sources.",
+        officialSources: targetMovie.officialSources || [],
+      });
     }
 
-    // Quality packages mapping
-    const qualityPackages = {
-      "4k": {
-        resolution: "3840x2160 (4K UHD)",
-        fileSize: "2.4 GB",
-        codec: "HEVC / H.265 (HDR10)",
-        bitrate: "18 Mbps",
-      },
-      "1080p": {
-        resolution: "1920x1080 (Full HD)",
-        fileSize: "1.2 GB",
-        codec: "AVC / H.264",
-        bitrate: "8 Mbps",
-      },
-      "720p": {
-        resolution: "1280x720 (HD)",
-        fileSize: "650 MB",
-        codec: "AVC / H.264",
-        bitrate: "3.5 Mbps",
-      },
-    };
-
-    const selectedPkg = qualityPackages[quality.toLowerCase()] || qualityPackages["1080p"];
-    const downloadToken = `dl_token_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-    const sanitizedFilename = `Filmvora_${(movie.title || "Movie").replace(/[^a-zA-Z0-9]/g, "_")}_${quality.toUpperCase()}.mp4`;
-
-    // Direct stream download URL
-    const directDownloadUrl = movie.videoUrl || "https://archive.org/download/BigBuckBunny_124/Content/big_buck_bunny_720p_surround.mp4";
+    const filename = `${targetMovie.title.replace(/[^a-zA-Z0-9]/g, "_")}_${quality}.mp4`;
 
     res.json({
       success: true,
-      message: "Download link verified and generated successfully",
       download: {
-        token: downloadToken,
-        movieId: movie._id,
-        title: movie.title,
+        title: targetMovie.title,
+        filename,
         quality: quality.toUpperCase(),
-        resolution: selectedPkg.resolution,
-        fileSize: selectedPkg.fileSize,
-        codec: selectedPkg.codec,
-        audioTrack: audio,
-        filename: sanitizedFilename,
-        downloadUrl: directDownloadUrl,
-        expiresInSeconds: 3600,
-        generatedAt: new Date().toISOString(),
+        availability: targetMovie.availability,
+        license: targetMovie.availability === "PUBLIC_DOMAIN" ? "Public Domain (Open License)" : "Creative Commons (Legal Free)",
+        fileSize: quality === "4k" ? "1.8 GB" : quality === "1080p" ? "950 MB" : "480 MB",
+        downloadUrl: targetMovie.downloadUrl,
+        expiresIn: "Unlimited (Direct Legal Archive)",
       },
     });
   } catch (error) {
@@ -433,101 +427,85 @@ export const requestDownload = async (req, res, next) => {
   }
 };
 
-// @desc    Create new movie
+// @desc    Create new movie (Admin)
 // @route   POST /api/movies
 // @access  Private/Admin
 export const createMovie = async (req, res, next) => {
   try {
     const {
       title,
+      originalTitle,
       description,
       poster,
+      posterUrl,
       backdrop,
+      bannerUrl,
       trailerUrl,
       videoUrl,
-      genre,
-      genres,
-      language,
-      releaseYear,
-      duration,
-      rating,
-      director,
-      cast,
-      ageRating,
-      quality,
-      isFeatured,
-      isTrending,
-      isPublished,
-      tags,
+      watchUrl,
+      downloadUrl,
+      availability = "EXTERNAL_STREAMING",
+      officialSources = [],
+      genre = "Cinema",
+      genres = [],
+      language = "English",
+      languages = ["English"],
+      country = "India",
+      releaseYear = 2025,
+      duration = "120 min",
+      rating = 8.0,
+      director = "Acclaimed Director",
+      cast = [],
+      ageRating = "13+",
+      quality = "4K Ultra HD",
+      contentType = "movie",
+      isFeatured = false,
+      isTrending = false,
+      isPublished = true,
+      tags = [],
     } = req.body;
 
-    let baseSlug = slugify(title);
-    let slug = baseSlug;
-
-    if (isDbConnected()) {
-      try {
-        let counter = 1;
-        while (await Movie.findOne({ slug })) {
-          slug = `${baseSlug}-${counter}`;
-          counter++;
-        }
-
-        const movie = await Movie.create({
-          title,
-          slug,
-          description,
-          poster,
-          backdrop,
-          trailerUrl: trailerUrl || "",
-          videoUrl,
-          genre,
-          genres: Array.isArray(genres) ? genres : [genre],
-          language: language || "English",
-          releaseYear: Number(releaseYear) || new Date().getFullYear(),
-          duration: Number(duration) || 120,
-          rating: Number(rating) || 7.0,
-          director: director || "Filmvora Studios",
-          cast: Array.isArray(cast) ? cast : cast ? cast.split(",").map((s) => s.trim()) : [],
-          ageRating: ageRating || "13+",
-          quality: quality || "4K Ultra HD",
-          isFeatured: Boolean(isFeatured),
-          isTrending: Boolean(isTrending),
-          isPublished: isPublished !== undefined ? Boolean(isPublished) : true,
-          tags: Array.isArray(tags) ? tags : tags ? tags.split(",").map((s) => s.trim()) : [],
-        });
-
-        return res.status(201).json({
-          success: true,
-          message: "Movie created successfully",
-          movie,
-        });
-      } catch (err) {}
+    if (!title || !description) {
+      return res.status(400).json({ success: false, message: "Title and description are required" });
     }
+
+    const slug = slugify(title) + "-" + Date.now().toString().slice(-4);
 
     const newMovie = {
       _id: `67d4f002000000000000${Date.now().toString().slice(-4)}`,
       title,
+      originalTitle: originalTitle || title,
       slug,
       description,
-      poster,
-      backdrop,
+      poster: posterUrl || poster || "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=800&q=80",
+      posterUrl: posterUrl || poster,
+      backdrop: bannerUrl || backdrop || "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=1920&q=80",
+      bannerUrl: bannerUrl || backdrop,
       trailerUrl: trailerUrl || "",
-      videoUrl,
+      videoUrl: videoUrl || watchUrl || "",
+      watchUrl: watchUrl || videoUrl || "",
+      downloadUrl: downloadUrl || "",
+      availability,
+      officialSources: Array.isArray(officialSources) ? officialSources : [],
+      contentType,
       genre,
-      genres: Array.isArray(genres) ? genres : [genre],
-      language: language || "English",
+      genres: Array.isArray(genres) && genres.length > 0 ? genres : [genre],
+      language,
+      languages: Array.isArray(languages) ? languages : [language],
+      country,
       releaseYear: Number(releaseYear) || 2025,
-      duration: Number(duration) || 120,
+      duration: String(duration),
       rating: Number(rating) || 8.0,
-      director: director || "Filmvora Studios",
-      cast: Array.isArray(cast) ? cast : cast ? cast.split(",").map((s) => s.trim()) : [],
-      ageRating: ageRating || "13+",
-      quality: quality || "4K Ultra HD",
+      director,
+      cast: Array.isArray(cast) ? cast : typeof cast === "string" ? cast.split(",").map((s) => s.trim()) : [],
+      ageRating,
+      quality,
       isFeatured: Boolean(isFeatured),
       isTrending: Boolean(isTrending),
-      isPublished: isPublished !== undefined ? Boolean(isPublished) : true,
-      tags: Array.isArray(tags) ? tags : tags ? tags.split(",").map((s) => s.trim()) : [],
+      isPublished: Boolean(isPublished),
+      tags: Array.isArray(tags) ? tags : typeof tags === "string" ? tags.split(",").map((s) => s.trim()) : [],
       views: 0,
+      createdAt: new Date().toISOString(),
     };
 
     inMemoryStore.movies.unshift(newMovie);
@@ -542,27 +520,12 @@ export const createMovie = async (req, res, next) => {
   }
 };
 
-// @desc    Update movie
+// @desc    Update movie (Admin)
 // @route   PUT /api/movies/:id
 // @access  Private/Admin
 export const updateMovie = async (req, res, next) => {
   try {
     const { id } = req.params;
-
-    if (isDbConnected()) {
-      try {
-        const movie = await Movie.findById(id);
-        if (movie) {
-          const updatedMovie = await Movie.findByIdAndUpdate(id, req.body, { new: true });
-          return res.json({
-            success: true,
-            message: "Movie updated successfully",
-            movie: updatedMovie,
-          });
-        }
-      } catch (err) {}
-    }
-
     const idx = inMemoryStore.movies.findIndex((m) => m._id.toString() === id);
     if (idx > -1) {
       inMemoryStore.movies[idx] = { ...inMemoryStore.movies[idx], ...req.body };
@@ -572,28 +535,18 @@ export const updateMovie = async (req, res, next) => {
         movie: inMemoryStore.movies[idx],
       });
     }
-
     res.status(404).json({ success: false, message: "Movie not found" });
   } catch (error) {
     next(error);
   }
 };
 
-// @desc    Delete movie
+// @desc    Delete movie (Admin)
 // @route   DELETE /api/movies/:id
 // @access  Private/Admin
 export const deleteMovie = async (req, res, next) => {
   try {
     const { id } = req.params;
-
-    if (isDbConnected()) {
-      try {
-        await Movie.findByIdAndDelete(id);
-        await Review.deleteMany({ movie: id });
-        return res.json({ success: true, message: "Movie deleted successfully" });
-      } catch (err) {}
-    }
-
     inMemoryStore.movies = inMemoryStore.movies.filter((m) => m._id.toString() !== id);
     res.json({ success: true, message: "Movie deleted successfully" });
   } catch (error) {
@@ -601,7 +554,9 @@ export const deleteMovie = async (req, res, next) => {
   }
 };
 
-// @desc    Add review
+// @desc    Add movie review
+// @route   POST /api/movies/:id/reviews
+// @access  Private
 export const addMovieReview = async (req, res, next) => {
   try {
     const { rating, comment } = req.body;
@@ -612,8 +567,8 @@ export const addMovieReview = async (req, res, next) => {
       movie: movieId,
       userName: req.user?.name || "Film Critic",
       userAvatar: req.user?.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80",
-      rating: Number(rating),
-      comment,
+      rating: Number(rating) || 8,
+      comment: comment || "Great movie discovery experience!",
       createdAt: new Date().toISOString(),
     };
 
@@ -623,62 +578,22 @@ export const addMovieReview = async (req, res, next) => {
       success: true,
       message: "Review submitted successfully",
       review: newRev,
-      newRating: Number(rating),
     });
   } catch (error) {
     next(error);
   }
 };
 
-// @desc    Get reviews
+// @desc    Get reviews for a movie
+// @route   GET /api/movies/:id/reviews
+// @access  Public
 export const getMovieReviews = async (req, res, next) => {
   try {
     const movieId = req.params.id;
     const reviews = inMemoryStore.reviews.filter(
       (r) => r.movie.toString() === movieId.toString()
     );
-    res.json({
-      success: true,
-      reviews,
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-// @desc    Generate High-Speed Direct Download Link
-// @route   POST /api/movies/:id/download
-// @access  Public
-export const requestDownload = async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    const { quality = "1080p", audio = "Original English" } = req.body;
-    let title = "Movie";
-
-    if (id.startsWith("tmdb-")) {
-      const tmdbId = id.replace("tmdb-", "");
-      const details = await getTmdbDetails(tmdbId);
-      if (details) title = details.title;
-    } else {
-      const local = inMemoryStore.movies.find((m) => m._id.toString() === id || m.slug === id);
-      if (local) title = local.title;
-    }
-
-    const filename = `${title.replace(/[^a-zA-Z0-9]/g, "_")}_${quality}.mp4`;
-    const downloadUrl = `https://archive.org/download/BigBuckBunny_124/Content/big_buck_bunny_720p_surround.mp4`;
-
-    res.json({
-      success: true,
-      download: {
-        title,
-        filename,
-        quality: quality.toUpperCase(),
-        audio,
-        fileSize: quality === "4k" ? "2.8 GB" : quality === "1080p" ? "1.4 GB" : "750 MB",
-        downloadUrl,
-        expiresIn: "24 Hours",
-      },
-    });
+    res.json({ success: true, reviews });
   } catch (error) {
     next(error);
   }

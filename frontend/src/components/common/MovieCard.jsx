@@ -1,6 +1,6 @@
-﻿import React, { useState } from "react";
+import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Play, Bookmark, Check, Info, Star } from "lucide-react";
+import { Play, Bookmark, Check, Info, Star, ExternalLink, ShieldCheck } from "lucide-react";
 import { useWatchlist } from "../../context/WatchlistContext";
 import RatingBadge from "./RatingBadge";
 
@@ -10,10 +10,25 @@ const MovieCard = ({ movie }) => {
   const inWatchlist = isInWatchlist(movie._id);
   const [isHovered, setIsHovered] = useState(false);
 
-  const handlePlayClick = (e) => {
+  const posterSrc =
+    movie.posterUrl ||
+    movie.poster ||
+    "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=800&q=80";
+
+  const isFreeLegal =
+    movie.availability === "PUBLIC_DOMAIN" ||
+    movie.availability === "CREATIVE_COMMONS" ||
+    movie.availability === "LICENSED" ||
+    movie.availability === "OWNED";
+
+  const handleActionClick = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    navigate(`/watch/${movie.slug || movie._id}`);
+    if (isFreeLegal && movie.watchUrl) {
+      navigate(`/watch/${movie.slug || movie._id}`);
+    } else {
+      navigate(`/movie/${movie.slug || movie._id}`);
+    }
   };
 
   const handleWatchlistClick = (e) => {
@@ -45,7 +60,7 @@ const MovieCard = ({ movie }) => {
       {/* Poster Image Container */}
       <div style={{ position: "relative", width: "100%", aspectRatio: "2/3", overflow: "hidden" }}>
         <img
-          src={movie.poster}
+          src={posterSrc}
           alt={movie.title}
           loading="lazy"
           style={{
@@ -54,6 +69,7 @@ const MovieCard = ({ movie }) => {
             objectFit: "cover",
             transition: "transform 0.4s ease",
             transform: isHovered ? "scale(1.06)" : "scale(1)",
+            backgroundColor: "#161b26",
           }}
           onError={(e) => {
             e.target.src =
@@ -75,128 +91,158 @@ const MovieCard = ({ movie }) => {
           }}
         >
           <RatingBadge rating={movie.rating} size="sm" />
-          {movie.quality && (
-            <span
-              style={{
-                background: "rgba(0, 0, 0, 0.65)",
-                backdropFilter: "blur(4px)",
-                color: "#e2e8f0",
-                fontSize: "0.65rem",
-                fontWeight: 700,
-                padding: "0.15rem 0.4rem",
-                borderRadius: "3px",
-                border: "1px solid rgba(255, 255, 255, 0.15)",
-              }}
-            >
-              {movie.quality}
-            </span>
-          )}
+          
+          {/* Availability Indicator Badge */}
+          <span
+            style={{
+              background: isFreeLegal ? "rgba(16, 185, 129, 0.85)" : "rgba(10, 12, 16, 0.8)",
+              backdropFilter: "blur(4px)",
+              color: isFreeLegal ? "#ffffff" : "#f1f5f9",
+              fontSize: "0.65rem",
+              fontWeight: 700,
+              padding: "0.2rem 0.45rem",
+              borderRadius: "4px",
+              border: isFreeLegal ? "1px solid rgba(16, 185, 129, 0.4)" : "1px solid rgba(255, 255, 255, 0.15)",
+              textTransform: "uppercase",
+              letterSpacing: "0.5px",
+            }}
+          >
+            {isFreeLegal ? "FREE STREAM" : "WHERE TO WATCH"}
+          </span>
         </div>
 
-        {/* Hover Overlay */}
+        {/* Hover Overlay with Action Buttons */}
         <div
           style={{
             position: "absolute",
             inset: 0,
-            background: "linear-gradient(180deg, rgba(0, 0, 0, 0.2) 0%, rgba(10, 12, 16, 0.95) 100%)",
+            backgroundColor: "rgba(10, 12, 16, 0.75)",
+            backdropFilter: "blur(2px)",
+            opacity: isHovered ? 1 : 0,
+            transition: "opacity 0.25s ease",
             display: "flex",
             flexDirection: "column",
             justifyContent: "center",
             alignItems: "center",
-            gap: "0.75rem",
-            opacity: isHovered ? 1 : 0,
-            transition: "opacity 0.25s ease",
+            gap: "0.6rem",
             padding: "1rem",
-            zIndex: 2,
           }}
         >
           <button
-            onClick={handlePlayClick}
+            onClick={handleActionClick}
             style={{
-              width: "52px",
-              height: "52px",
+              width: "44px",
+              height: "44px",
               borderRadius: "50%",
-              background: "var(--primary)",
-              color: "#fff",
+              backgroundColor: isFreeLegal ? "var(--accent-emerald)" : "var(--primary)",
+              color: "#ffffff",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              boxShadow: "0 0 20px rgba(229, 9, 20, 0.6)",
-              transform: isHovered ? "scale(1)" : "scale(0.8)",
-              transition: "transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275)",
+              boxShadow: "0 0 16px rgba(0,0,0,0.5)",
+              transition: "transform 0.15s ease",
+              transform: isHovered ? "scale(1.08)" : "scale(0.8)",
             }}
-            title="Stream Movie"
+            title={isFreeLegal ? "Watch Free Online" : "Where to Watch OTT Guide"}
           >
-            <Play size={24} fill="#fff" style={{ marginLeft: "3px" }} />
+            {isFreeLegal ? <Play size={20} fill="#ffffff" style={{ marginLeft: "2px" }} /> : <ExternalLink size={18} />}
           </button>
 
-          <div style={{ display: "flex", gap: "0.5rem" }}>
+          <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "#fff" }}>
+            {isFreeLegal ? "Watch Online" : "Where to Watch"}
+          </span>
+
+          <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.25rem" }}>
             <button
               onClick={handleWatchlistClick}
-              className="btn-icon"
               style={{
-                width: "36px",
-                height: "36px",
-                background: inWatchlist ? "rgba(229, 9, 20, 0.3)" : "rgba(255, 255, 255, 0.15)",
-                color: inWatchlist ? "var(--primary)" : "#fff",
+                background: inWatchlist ? "rgba(229, 9, 20, 0.25)" : "rgba(255, 255, 255, 0.15)",
                 border: inWatchlist ? "1px solid var(--primary)" : "1px solid rgba(255, 255, 255, 0.2)",
+                color: inWatchlist ? "var(--primary)" : "#fff",
+                borderRadius: "var(--radius-full)",
+                padding: "0.35rem 0.75rem",
+                fontSize: "0.75rem",
+                fontWeight: 600,
+                display: "flex",
+                alignItems: "center",
+                gap: "0.3rem",
+                cursor: "pointer",
               }}
-              title={inWatchlist ? "Remove from Watchlist" : "Add to Watchlist"}
             >
-              {inWatchlist ? <Check size={16} /> : <Bookmark size={16} />}
+              {inWatchlist ? <Check size={12} /> : <Bookmark size={12} />}
+              <span>{inWatchlist ? "Saved" : "Watchlist"}</span>
             </button>
 
-            <Link
-              to={`/movie/${movie.slug || movie._id}`}
-              className="btn-icon"
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/movie/${movie.slug || movie._id}`);
+              }}
               style={{
-                width: "36px",
-                height: "36px",
                 background: "rgba(255, 255, 255, 0.15)",
                 border: "1px solid rgba(255, 255, 255, 0.2)",
+                color: "#fff",
+                borderRadius: "var(--radius-full)",
+                padding: "0.35rem 0.75rem",
+                fontSize: "0.75rem",
+                fontWeight: 600,
+                display: "flex",
+                alignItems: "center",
+                gap: "0.3rem",
+                cursor: "pointer",
               }}
-              title="View Details"
-              onClick={(e) => e.stopPropagation()}
             >
-              <Info size={16} />
-            </Link>
+              <Info size={12} />
+              <span>Details</span>
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Card Info Footer */}
-      <div style={{ padding: "0.75rem 0.85rem", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
-        <h4
+      {/* Card Info Details */}
+      <div style={{ padding: "0.875rem 0.75rem" }}>
+        <h3
           style={{
             fontSize: "0.95rem",
-            fontWeight: 600,
+            fontWeight: 700,
             whiteSpace: "nowrap",
             overflow: "hidden",
             textOverflow: "ellipsis",
-            color: isHovered ? "var(--primary)" : "var(--text-main)",
-            transition: "color 0.2s ease",
+            marginBottom: "0.35rem",
+            color: "#ffffff",
           }}
           title={movie.title}
         >
           {movie.title}
-        </h4>
+        </h3>
 
         <div
           style={{
             display: "flex",
-            justifyContent: "space-between",
             alignItems: "center",
+            justifyContent: "space-between",
             fontSize: "0.8rem",
-            color: "var(--text-muted)",
+            color: "var(--text-secondary)",
           }}
         >
-          <span>{movie.releaseYear || "2025"}</span>
-          <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>
-            {movie.genre || (movie.genres && movie.genres[0]) || "Cinema"}
+          <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+            <span>{movie.releaseYear || "2024"}</span>
+            <span>•</span>
+            <span>{movie.genre || (movie.genres && movie.genres[0]) || "Cinema"}</span>
+          </div>
+
+          <span
+            style={{
+              fontSize: "0.7rem",
+              fontWeight: 600,
+              color: "var(--text-muted)",
+              background: "rgba(255, 255, 255, 0.05)",
+              padding: "0.1rem 0.35rem",
+              borderRadius: "3px",
+            }}
+          >
+            {movie.language || "EN"}
           </span>
-          {movie.duration && (
-            <span>{Math.floor(movie.duration / 60)}h {movie.duration % 60}m</span>
-          )}
         </div>
       </div>
     </div>

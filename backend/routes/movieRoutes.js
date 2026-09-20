@@ -2,6 +2,7 @@ import express from "express";
 import {
   getMovies,
   getMovie,
+  getCategoryMovies,
   instantSearch,
   createMovie,
   updateMovie,
@@ -21,6 +22,9 @@ router.route("/")
 
 router.route("/instant-search")
   .get(instantSearch);
+
+router.route("/categories/:category")
+  .get(getCategoryMovies);
 
 router.route("/:id/download")
   .post(requestDownload);
